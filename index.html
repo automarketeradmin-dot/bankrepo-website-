@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only">
+<title>Bank Repo Cars</title>
+<style>
+:root{color-scheme:light}
+/* Layout: plain dealership site. White header with logo, grey page, rectangular cards, red buttons. */
+:root {
+  --bg: #f2f3f5;
+  --surface: #ffffff;
+  --surface-2: #e9ebef;
+  --fg: #1d1f23;
+  --muted: #5b6270;
+  --border: #d5d8dd;
+  --red: #d71920;
+  --red-hover: #b3141a;
+  --red-text: #b3141a;
+  --on-red: #ffffff;
+  --logo-bg: #ffffff;
+  --ok: #1f7a3d; --ok-bg: #eef8f1;
+  --warn: #8a5200; --warn-bg: #fff6e5;
+  --bad: #b3141a; --bad-bg: #fdeeee;
+  --grey-tag: #3b4250; --grey-tag-bg: #eceef1;
+  --wip-bg: #fff3b0; --wip-fg: #5a4a00; --wip-border: #8a7400;
+  --green: #1f7a3d; --green-hover: #17612f;
+  --focus: #1a5fd0;
+  --font: Arial, Helvetica, "Liberation Sans", sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 16px; line-height: 1.5; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 12px; text-wrap: balance; }
+h1 { font-size: 28px; } h2 { font-size: 22px; } h3 { font-size: 18px; }
+p { margin: 0 0 12px; }
+a { color: var(--red-text); }
+button { font-family: inherit; }
+.wrap { max-width: 1100px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.muted { color: var(--muted); } .small { font-size: 14px; }
+
+/* Preview banner */
+.wip-bar { background: var(--wip-bg); color: var(--wip-fg); border-bottom: 1px solid var(--wip-border); font-size: 14px; font-weight: 700; }
+.wip-bar .wrap { padding-block: 8px; }
+
+/* Header */
+.site-header { background: var(--logo-bg); border-bottom: 3px solid var(--red); color: #1d1f23; }
+.site-header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 20px; padding-block: 10px; }
+.logo { background: none; border: 0; padding: 0; cursor: pointer; }
+.logo img { height: 32px; width: auto; display: block; max-width: 100%; }
+.nav { display: flex; flex-wrap: wrap; gap: 0 18px; }
+.nav button { background: none; border: 0; color: #1d1f23; font-weight: 700; font-size: 16px; padding: 8px 0; cursor: pointer; }
+.nav button:hover { color: #d71920; }
+
+/* Buttons */
+.btn { display: inline-block; border: 1px solid var(--red); background: var(--red); color: var(--on-red); padding: 12px 18px; font-size: 16px; font-weight: 700; cursor: pointer; border-radius: 2px; text-align: center; text-decoration: none; }
+.btn:hover { background: var(--red-hover); border-color: var(--red-hover); }
+.btn-outline { background: var(--surface); color: var(--red-text); border-color: var(--red-text); }
+.btn-outline:hover { background: var(--surface-2); color: var(--red-text); border-color: var(--red-text); }
+.btn-block { display: block; width: 100%; }
+.btn-small { padding: 8px 12px; font-size: 14px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Hero */
+.hero { background: var(--surface); border-bottom: 1px solid var(--border); }
+.hero .wrap { padding-block: 32px; }
+.hero p { font-size: 18px; max-width: 620px; }
+
+.section { padding-block: 24px; }
+
+/* Filters */
+.filters { background: var(--surface); border: 1px solid var(--border); padding: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+.filters .wide { grid-column: 1 / -1; }
+.filters label, .field label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 3px; }
+.filter-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
+input[type=text], input[type=tel], input[type=number], select, textarea { width: 100%; padding: 10px; font-size: 16px; border: 1px solid var(--muted); border-radius: 2px; background: var(--surface); color: var(--fg); font-family: inherit; }
+
+/* Grid + cards */
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); display: flex; flex-direction: column; min-width: 0; }
+.sample-strip { background: var(--wip-bg); color: var(--wip-fg); border-bottom: 1px dashed var(--wip-border); font-size: 12px; font-weight: 700; padding: 4px 8px; text-align: center; }
+.photo-ph { aspect-ratio: 4 / 3; max-width: 100%; background: var(--surface-2); color: var(--muted); display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; padding: 12px; border: 0; width: 100%; cursor: pointer; }
+.card-body { padding: 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.card-title { font-size: 18px; font-weight: 700; margin: 0; }
+.card-title button { background: none; border: 0; padding: 0; font: inherit; color: var(--fg); cursor: pointer; text-align: left; }
+.card-title button:hover { text-decoration: underline; }
+.meta { font-size: 14px; color: var(--muted); }
+.price { font-size: 22px; font-weight: 700; color: var(--red-text); font-variant-numeric: tabular-nums; }
+.card-actions { margin-top: auto; padding-top: 10px; display: grid; gap: 8px; }
+
+.tag { display: inline-block; font-size: 13px; font-weight: 700; padding: 3px 8px; border: 1px solid; border-radius: 2px; align-self: flex-start; }
+.tag-ok { color: var(--ok); background: var(--ok-bg); } .tag-warn { color: var(--warn); background: var(--warn-bg); }
+.tag-bad { color: var(--bad); background: var(--bad-bg); } .tag-grey { color: var(--grey-tag); background: var(--grey-tag-bg); }
+
+.panel { background: var(--surface); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; }
+.notice { border: 1px solid var(--border); border-left: 4px solid var(--red); background: var(--surface); padding: 12px 14px; margin-bottom: 16px; }
+.notice-ok { border-left-color: var(--ok); } .notice-error { border-left-color: var(--bad); background: var(--bad-bg); }
+
+/* Vehicle page */
+.vehicle-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.thumbs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 8px; }
+.thumbs div { aspect-ratio: 4 / 3; background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); }
+.spec-table { width: 100%; border-collapse: collapse; }
+.spec-table th, .spec-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 15px; vertical-align: top; }
+.spec-table th { width: 40%; color: var(--muted); }
+.linkback { background: none; border: 0; color: var(--red-text); font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 12px; text-decoration: underline; }
+
+/* Form */
+.field { margin-bottom: 14px; }
+.field-error { color: var(--bad); font-size: 14px; margin-top: 4px; }
+.form-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 16px; }
+.checkbox { display: flex; gap: 10px; align-items: flex-start; font-weight: 400 !important; font-size: 16px !important; }
+.checkbox input { margin-top: 5px; width: 20px; height: 20px; flex: none; }
+pre.wa { white-space: pre-wrap; word-break: break-word; background: var(--surface-2); border: 1px solid var(--border); padding: 12px; font-family: inherit; font-size: 15px; margin: 0 0 12px; }
+
+/* Story */
+.story { background: var(--surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.story .wrap { padding-block: 28px; }
+.story-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.portrait-ph { aspect-ratio: 4 / 5; max-width: 320px; width: 100%; border: 2px dashed var(--muted); background: var(--surface-2); color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 16px; }
+.portrait-ph strong { color: var(--fg); }
+.wip-tag { display: inline-block; background: var(--wip-bg); color: var(--wip-fg); border: 1px dashed var(--wip-border); font-size: 12px; font-weight: 700; padding: 4px 8px; margin-bottom: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+.skel { height: 12px; background: var(--surface-2); margin-bottom: 10px; max-width: 100%; }
+
+.site-footer { background: var(--surface); border-top: 1px solid var(--border); font-size: 14px; color: var(--muted); margin-top: 32px; }
+.site-footer .wrap { padding-block: 20px; }
+
+@media (min-width: 600px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) {
+  h1 { font-size: 34px; }
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .filters { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .filters .wide { grid-column: span 2; }
+  .filter-actions { grid-column: span 2; }
+  .vehicle-layout { grid-template-columns: 3fr 2fr; }
+  .story-grid { grid-template-columns: 320px minmax(0, 1fr); gap: 32px; }
+}
+
+/* ---- additions in the same flat style ---- */
+.card-img { display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: 0; background: var(--surface-2); cursor: pointer; }
+.card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nophoto { width: 100%; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 14px; background: var(--surface-2); }
+.gallery-main img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border: 1px solid var(--border); background: var(--surface-2); }
+.thumbs button { padding: 0; border: 2px solid var(--border); background: none; cursor: pointer; aspect-ratio: 4 / 3; overflow: hidden; }
+.thumbs button[aria-current="true"] { border-color: var(--red); }
+.thumbs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumbs div { display: none; }
+.tag-sold { color: #fff; background: #3b4250; border-color: #3b4250; }
+.card-title button:focus-visible { outline-offset: 2px; }
+.btn[disabled] { opacity: .55; cursor: not-allowed; }
+.price-lg { font-size: 28px; font-weight: 700; color: var(--red-text); font-variant-numeric: tabular-nums; }
+.lead-in { font-size: 18px; max-width: 640px; }
+
+.pay-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.pay-grid .panel { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.pay-grid .panel .btn { margin-top: auto; align-self: flex-start; }
+
+.about-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+.portrait { width: 100%; max-width: 300px; aspect-ratio: 4 / 5; object-fit: cover; display: block; border: 1px solid var(--border); background: var(--surface-2); }
+.steps { margin: 0; padding-left: 22px; } .steps li { margin-bottom: 8px; }
+
+.opt-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 16px; }
+.opt { display: flex; gap: 10px; align-items: flex-start; border: 2px solid var(--border); background: var(--surface); padding: 12px; cursor: pointer; }
+.opt input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--red); }
+.opt:has(input:checked) { border-color: var(--red); }
+.opt b { display: block; } .opt small { color: var(--muted); font-size: 14px; }
+.estimate { background: var(--surface-2); border: 1px solid var(--border); padding: 14px; margin-bottom: 16px; }
+.estimate .big { font-size: 28px; font-weight: 700; color: var(--red-text); font-variant-numeric: tabular-nums; }
+.estimate table { width: 100%; border-collapse: collapse; font-size: 15px; margin-bottom: 8px; }
+.estimate td { padding: 3px 0; } .estimate td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.docs { border: 1px solid var(--border); background: var(--surface); padding: 14px; margin-bottom: 16px; }
+.doc { padding: 10px 0; border-bottom: 1px solid var(--border); } .doc:last-child { border-bottom: 0; }
+.doc .fn { font-size: 13px; color: var(--ok); margin-top: 4px; word-break: break-word; }
+input[type=file] { width: 100%; font-size: 15px; }
+.req { color: var(--red-text); font-weight: 700; }
+
+.admin-bar { background: #2b2f36; color: #fff; }
+.admin-bar .wrap { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; padding-block: 6px; }
+.admin-bar .tab { background: none; border: 0; color: #fff; font-weight: 700; font-size: 16px; padding: 8px 10px; cursor: pointer; border-bottom: 3px solid transparent; }
+.admin-bar .tab[aria-current="true"] { border-bottom-color: #ff5a60; }
+.admin-bar .who { margin-left: auto; font-size: 13px; color: #cfd3da; }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.page-head h1 { margin: 0; font-size: 26px; }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); margin-bottom: 8px; }
+table.data { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 860px; }
+table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+table.data th { background: var(--surface-2); white-space: nowrap; }
+table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { background: var(--surface-2); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.seg button { background: var(--surface); color: var(--fg); border: 1px solid var(--border); padding: 8px 12px; font-size: 14px; cursor: pointer; border-radius: 2px; }
+.seg button[aria-pressed="true"], .seg button[aria-checked="true"] { background: var(--red); color: var(--on-red); border-color: var(--red); }
+.status { font-weight: 700; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.vrow { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 6px 12px; align-items: center; background: var(--surface); border: 1px solid var(--border); padding: 10px 12px; margin-bottom: 10px; }
+.vrow .thumb { width: 72px; aspect-ratio: 4 / 3; object-fit: cover; background: var(--surface-2); display: block; }
+.vrow .thumb.none { display: flex; align-items: center; justify-content: center; font-size: 10px; color: var(--muted); text-align: center; }
+.vrow .vmeta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.editor { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+.drop { border: 2px dashed var(--muted); background: var(--surface-2); padding: 22px; text-align: center; cursor: pointer; }
+.drop.over { border-color: var(--red); }
+.photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.photo { position: relative; border: 1px solid var(--border); background: var(--surface); }
+.photo img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.photo .cover { position: absolute; left: 6px; top: 6px; }
+.photo .ctl { display: flex; justify-content: space-between; gap: 4px; padding: 4px; }
+.photo .ctl button { border: 1px solid var(--border); background: var(--surface-2); color: var(--fg); font-size: 13px; font-weight: 700; padding: 4px 8px; cursor: pointer; }
+.check { list-style: none; margin: 0; padding: 0; } .check li { display: flex; gap: 8px; padding: 3px 0; }
+.check .tick { font-weight: 700; width: 18px; flex: none; } .check .ok { color: var(--ok); } .check .no { color: var(--bad); }
+.overlay { position: fixed; inset: 0; z-index: 40; background: rgba(10,12,16,.5); display: flex; justify-content: flex-end; }
+.drawer { background: var(--bg); width: min(480px, 100%); height: 100%; overflow-y: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(16px + env(safe-area-inset-bottom, 0px)) 16px; border-left: 3px solid var(--red); }
+.note { border-bottom: 1px solid var(--border); padding: 8px 0; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: #2b2f36; color: #fff; padding: 10px 16px; font-weight: 700; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); border-left: 4px solid var(--red); }
+
+@media (min-width: 600px) {
+  .pay-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opt-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .photos { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (min-width: 900px) {
+  .about-grid { grid-template-columns: 300px minmax(0, 1fr); gap: 32px; }
+  .editor { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .vrow { grid-template-columns: 84px minmax(0, 1fr) auto; } .vrow .vmeta { grid-column: auto; }
+  .filters .wide { grid-column: span 2; } .filters { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .filter-actions { grid-column: span 1; }
+}
+
+.tag-rto { color: #fff; background: var(--red); border-color: var(--red); }
+.rto-box { border: 1px solid var(--border); background: var(--surface-2); padding: 12px 14px; margin-bottom: 10px; }
+.rto-box b { display: block; margin-bottom: 4px; }
+.rto-row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-variant-numeric: tabular-nums; }
+.sub { font-size: 18px; margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--red); }
+.form-grid.three { grid-template-columns: minmax(0, 1fr); }
+.hidden-box[hidden] { display: none !important; }
+.login-box { max-width: 420px; margin: 0 auto; }
+.total-line { display: flex; justify-content: space-between; font-weight: 700; padding-top: 8px; border-top: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+@media (min-width: 600px) { .form-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .filters { grid-template-columns: repeat(7, minmax(0, 1fr)); } .filters .wide { grid-column: span 2; } .filter-actions { grid-column: span 1; } }
+
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="wrap">
+    <button class="logo" type="button" data-go="home" aria-label="Bank Repo Cars home"><img src="data:image/png;base64,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" alt="Bank Repo Cars"></button>
+    <nav class="nav" aria-label="Main">
+      <button type="button" data-go="home">Home</button>
+      <button type="button" data-go="browse">Browse Vehicles</button>
+      <button type="button" data-go="about">About</button>
+      <button type="button" data-apply="">Rent to Own</button>
+      <button type="button" data-go="contact">Contact</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section id="view-home">
+    <div class="hero"><div class="wrap">
+      <h1>Find a Vehicle That Fits Your Budget.</h1>
+      <p>Browse our available stock, review vehicle details and enquire directly with our sales team. Pay cash, or rent to own on selected vehicles.</p>
+      <button class="btn" type="button" data-go="browse">Browse Available Vehicles</button>
+    </div></div>
+
+    <div class="section" id="stock"><div class="wrap">
+      <h2>Available Vehicles</h2>
+      <form class="filters" id="filters" onsubmit="return false">
+        <div class="wide"><label for="f-q">Search make, model or stock number</label><input id="f-q" type="text"></div>
+        <div><label for="f-body">Body type</label><select id="f-body"><option value="">All body types</option></select></div>
+        <div><label for="f-pay">Payment</label><select id="f-pay"><option value="">Cash or rent to own</option><option value="rto">Rent to own available</option></select></div>
+        <div><label for="f-min">Min price (R)</label><input id="f-min" type="number" min="0" inputmode="numeric"></div>
+        <div><label for="f-max">Max price (R)</label><input id="f-max" type="number" min="0" inputmode="numeric"></div>
+        <div class="filter-actions"><button class="btn btn-outline" type="button" id="f-clear">Clear</button></div>
+      </form>
+      <div id="grid" class="grid"></div>
+      <div id="empty" class="notice" hidden>No vehicles match your search. Try clearing the filters.</div>
+    </div></div>
+
+    <div class="section" style="padding-top:0"><div class="wrap">
+      <h2>Two ways to buy</h2>
+      <div class="pay-grid">
+        <div class="panel"><h3>Cash</h3><p>Pay the asking price in cash. Every vehicle shows its price, its stock number and an honest description of its condition.</p><button class="btn btn-outline" type="button" data-go="browse">Browse vehicles</button></div>
+        <div class="panel"><h3>Rent to Own</h3><p>For customers who are blacklisted or cannot get bank finance. Pay a 30% deposit, then monthly payments over 48 or 54 months. Available on selected vehicles, with the deposit and monthly amount shown on each one.</p><div class="row"><button class="btn" type="button" data-rto-filter>See rent to own vehicles</button><button class="btn btn-outline" type="button" data-apply="">Apply</button></div></div>
+      </div>
+    </div></div>
+  </section>
+
+  <section id="view-vehicle" hidden><div class="section"><div class="wrap" id="vehicle-body"></div></div></section>
+  <section id="view-enquiry" hidden><div class="section"><div class="wrap" style="max-width: 640px" id="enquiry-body"></div></div></section>
+
+  <section id="view-about" hidden>
+    <div class="hero"><div class="wrap"><h1>About Bank Repo Cars</h1><p>Who we are, who runs the dealership and how buying from us works.</p></div></div>
+    <div class="section"><div class="wrap" style="max-width: 900px">
+      <div class="panel">
+        <h2>Our sales manager</h2>
+        <div class="about-grid">
+          <img class="portrait" id="sam-photo" alt="Sam Mosala, Sales Manager">
+          <div>
+            <h3 style="margin-bottom:2px">Sam Mosala</h3>
+            <p class="muted">Sales Manager, Bank Repo Cars</p>
+            <p>Hi, I am Sam Mosala. I am here to help you buy your car.</p>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>What is Bank Repo Cars?</h2>
+        <p>Bank Repo Cars is a vehicle dealership in Bloemfontein. We sell vehicles at different prices and in different conditions. Some run and drive, some need repairs and some are non-runners. Every listing says which, so you always know what you are looking at.</p>
+      </div>
+      <div class="panel">
+        <h2>How Bank Repo Cars works</h2>
+        <ol class="steps">
+          <li><b>Browse.</b> Look through the vehicles on the website. Each one has photos, a stock number, the price and a description of its condition and problems.</li>
+          <li><b>Enquire.</b> Press Inquire About This Vehicle and fill in your details. Your enquiry is saved and WhatsApp opens with your message ready to send to our sales team.</li>
+          <li><b>Talk to us.</b> Our sales team contacts you about the vehicle and answers your questions.</li>
+          <li><b>Pay your way.</b> Our vehicles are sold either for cash or on rent to own.</li>
+        </ol>
+      </div>
+      <div class="panel">
+        <h2>Cash or rent to own</h2>
+        <p><b>Cash.</b> You pay the full asking price shown on the vehicle.</p>
+        <p><b>Rent to own.</b> Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle's price, then pay monthly over 48 or 54 months. Rent to own is only available on selected vehicles. Each of those vehicles shows its deposit and its monthly amount.</p>
+        <p><b>Documents for a rent to own application</b></p>
+        <ul class="steps">
+          <li><b>If you are employed:</b> 3 months bank statements, 3 months payslips, driver's license, and ID or passport.</li>
+          <li><b>If you are self-employed or own a business:</b> 6 months bank statements, driver's license, and ID or passport.</li>
+        </ul>
+        <button class="btn" type="button" data-apply="">Apply for rent to own</button>
+      </div>
+      <div class="panel">
+        <h2>Who owns Bank Repo Cars?</h2>
+        <p>Bank Repo Cars is owned by Executive Motor World.</p>
+        <p class="muted small">Dealership address: 45 Krause Street, Oranjesig, Bloemfontein, 9301.</p>
+      </div>
+    </div></div>
+  </section>
+
+  <section id="view-apply" hidden><div class="section"><div class="wrap" style="max-width: 760px" id="apply-body"></div></div></section>
+
+  <section id="view-contact" hidden><div class="section"><div class="wrap" style="max-width: 720px">
+    <h1>Contact / Enquiries</h1>
+    <div class="panel"><h3>Enquire about a vehicle</h3>
+      <p>Open any vehicle and press <strong>Inquire About This Vehicle</strong>. Your enquiry is saved and then opens in WhatsApp, ready to send to our sales team.</p>
+      <button class="btn" type="button" data-go="browse">Browse Available Vehicles</button></div>
+    <div class="panel"><h3>Rent to Own</h3><p>Want to pay monthly? Make a rent to own application with your documents.</p><button class="btn btn-outline" type="button" data-apply="">Make an application</button></div>
+    <div class="panel"><h3>Bank Repo Cars</h3><p>45 Krause Street, Oranjesig, Bloemfontein, 9301</p><p class="muted small" id="contact-extra">Phone and email to be added.</p></div>
+  </div></div></section>
+
+  <section id="view-login" hidden><div class="section"><div class="wrap">
+    <div class="login-box"><h1>Staff login</h1>
+      <form class="panel" id="login" novalidate>
+        <div class="field"><label for="lg-email">Email</label><input id="lg-email" type="text" autocomplete="username"></div>
+        <div class="field"><label for="lg-pass">Password</label><input id="lg-pass" type="password" autocomplete="current-password"></div>
+        <div class="field-error" id="lg-err" hidden></div>
+        <button class="btn btn-block" type="submit">Sign in</button>
+      </form></div>
+  </div></div></section>
+
+  <section id="view-admin" hidden>
+    <div class="admin-bar"><div class="wrap">
+      <button class="tab" type="button" data-admin="leads">Leads</button>
+      <button class="tab" type="button" data-admin="apps">Applications</button>
+      <button class="tab" type="button" data-admin="cars">Cars</button>
+      <button class="btn btn-small" type="button" data-new-car>+ Upload a car</button>
+      <span class="who"><button class="tab" type="button" data-signout>Sign out</button></span>
+    </div></div>
+    <div class="section"><div class="wrap" id="admin-body"></div></div>
+  </section>
+</main>
+
+<div id="overlay-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<footer class="site-footer"><div class="wrap">
+  <p><strong>Bank Repo Cars</strong> · 45 Krause Street, Oranjesig, Bloemfontein, 9301</p>
+  <p>Vehicles are sold as described in each listing. Photos and details are supplied by the dealership.</p>
+</div></footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function () {
+  /* =====================================================================
+     SETTINGS: fill these in (Supabase > Project Settings > API)
+     ===================================================================== */
+  var CFG = {
+    SUPABASE_URL: 'https://bdpgnjlfvirxpviwjoym.supabase.co',
+    SUPABASE_ANON_KEY: 'sb_publishable_yiUOj25ic0PDd7MeTLIxgA_q91CPgyZ',
+    PHONE: '076 538 6677',   // dealership phone
+    EMAIL: 'bankrepocarsadmin@gmail.com'    // dealership email
+  };
+  /* ===================================================================== */
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var money = function (n) { return 'R' + Math.round(n).toLocaleString('en-ZA').replace(/ /g, ' '); };
+  var kmFmt = function (n) { return Number(n).toLocaleString('en-ZA').replace(/ /g, ' ') + ' km'; };
+  var dt = function (d) { return new Date(d).toLocaleString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+  var ago = function (t) { var m = Math.max(1, Math.round((Date.now() - t) / 60000)); if (m < 60) return m + ' min ago'; var h = Math.round(m / 60); if (h < 24) return h + ' h ago'; return Math.round(h / 24) + ' d ago'; };
+  var depositFor = function (price) { return Math.round((+price || 0) * 0.3); };
+
+  var configured = !/PASTE/.test(CFG.SUPABASE_URL + CFG.SUPABASE_ANON_KEY) && !!window.supabase;
+  var sb = configured ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
+  var FN_URL = CFG.SUPABASE_URL.replace(/\/+$/, '') + '/functions/v1/submit';
+  var pubUrl = function (path) { return sb.storage.from('vehicle-images').getPublicUrl(path).data.publicUrl; };
+
+  var CONDITIONS = { runs_drives: { label: 'Runs and drives', tone: 'ok' }, needs_repairs: { label: 'Needs repairs', tone: 'warn' }, non_runner: { label: 'Non-runner', tone: 'bad' }, not_confirmed: { label: 'Condition not confirmed', tone: 'grey' } };
+  var BODY_TYPES = ['Hatchback', 'Sedan', 'Bakkie', 'SUV', 'Station wagon', 'Bus / Minibus', 'Panel van', 'Other'];
+  var BUDGETS = ['Under R50,000', 'R50,000–R100,000', 'R100,000–R200,000', 'R200,000–R350,000', 'R350,000 and above', 'Still deciding'];
+  var PAYMENTS = ['Cash', 'Rent to own', 'Not sure yet'];
+  var STATUSES = ['new', 'contacted', 'qualified', 'converted', 'lost'];
+  var SLABEL = { new: 'New', contacted: 'Contacted', qualified: 'Qualified', converted: 'Converted', lost: 'Lost' };
+  var ASTATUS = ['new', 'review', 'approved', 'declined'];
+  var ALABEL = { new: 'New', review: 'In review', approved: 'Approved', declined: 'Declined' };
+  var DOCS = {
+    employed: [['bank', 'Bank statements: last 3 months', true], ['payslip', 'Payslips: last 3 months', true], ['license', "Driver's license", false], ['id', 'ID or passport', false]],
+    self: [['bank', 'Bank statements: last 6 months', true], ['license', "Driver's license", false], ['id', 'ID or passport', false]]
+  };
+  var EXPENSES = [['rent', 'Rent'], ['vehicle', 'Vehicle'], ['clothing', 'Clothing account'], ['utilities', 'Electricity and water'], ['furniture', 'Furniture account'], ['policies', 'Policies'], ['groceries', 'Groceries'], ['cellphone', 'Cellphone'], ['other', 'Other']];
+  var MAX_DOC = 10 * 1024 * 1024, DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+
+  /* ---------- Data ---------- */
+  var CARS = [], LEADS = [], APPS = [], carsState = 'loading';
+  function mapVehicle(r) {
+    var imgs = (r.vehicle_images || []).slice().sort(function (a, b) { return a.position - b.position; });
+    return { id: r.id, stock: r.stock_number, make: r.make, model: r.model, body: r.body_type, year: r.year, price: +r.price, cond: r.condition, km: r.mileage, desc: r.description, status: r.status, created: new Date(r.created_at).getTime(),
+      photos: imgs.map(function (i) { return { id: i.id, path: i.path, url: pubUrl(i.path) }; }),
+      rto: r.rto_enabled ? { deposit: +r.rto_deposit, m48: r.rto_m48 ? +r.rto_m48 : null, m54: r.rto_m54 ? +r.rto_m54 : null } : null };
+  }
+  function loadCars() {
+    if (!sb) { carsState = 'noconfig'; return Promise.resolve(); }
+    return sb.from('vehicles').select('*, vehicle_images(id, path, position)').order('created_at', { ascending: false }).then(function (r) {
+      if (r.error) { carsState = 'error'; return; }
+      CARS = r.data.map(mapVehicle); carsState = 'ok';
+    }, function () { carsState = 'error'; });
+  }
+  function loadLeads() {
+    return sb.from('leads').select('*').order('created_at', { ascending: false }).then(function (r) {
+      LEADS = (r.data || []).map(function (l) { return { id: l.id, at: new Date(l.created_at).getTime(), first: l.first_name, surname: l.surname, phone: l.phone, location: l.location, budget: l.budget, pay: l.payment, stock: l.stock_number, vtitle: l.vehicle_title, price: +l.price, status: l.status, notes: l.notes || [] }; });
+    });
+  }
+  function loadApps() {
+    return sb.from('applications').select('*, application_documents(label, path, position)').order('created_at', { ascending: false }).then(function (r) {
+      APPS = (r.data || []).map(function (a) {
+        var docs = [], idx = {};
+        (a.application_documents || []).sort(function (x, y) { return x.position - y.position; }).forEach(function (d) { if (idx[d.label] === undefined) { idx[d.label] = docs.length; docs.push({ label: d.label, files: [] }); } docs[idx[d.label]].files.push(d.path); });
+        return { id: a.id, ref: a.ref, at: new Date(a.created_at).getTime(), stock: a.stock_number, vtitle: a.vehicle_title, price: +a.price, deposit: +a.deposit, term: a.term_months, monthly: +a.monthly, emp: a.employment, status: a.status, f: a.answers, docs: docs };
+      });
+    });
+  }
+  var find = function (s) { return CARS.filter(function (v) { return v.stock === s; })[0]; };
+  var title = function (v) { return v.year + ' ' + v.make + ' ' + v.model; };
+  var rtoTerms = function (v) { var t = []; if (v.rto && v.rto.m48 > 0) t.push([48, v.rto.m48]); if (v.rto && v.rto.m54 > 0) t.push([54, v.rto.m54]); return t; };
+  var hasRto = function (v) { return !!v.rto && rtoTerms(v).length > 0 && v.rto.deposit > 0; };
+  var photosOf = function (v) { return (v.photos || []).map(function (p) { return typeof p === 'string' ? p : p.url; }); };
+
+  /* ---------- Static bits ---------- */
+  var SAM_FALLBACK = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 400"><rect width="320" height="400" fill="#d9dde3"/><circle cx="160" cy="150" r="58" fill="#9aa3ae"/><path d="M40 400 Q40 255 160 255 Q280 255 280 400 Z" fill="#9aa3ae"/></svg>');
+  $('sam-photo').onerror = function () { this.onerror = null; this.src = SAM_FALLBACK; };
+  $('sam-photo').src = 'sam.jpg';   // put Sam's photo next to index.html and name it sam.jpg
+  (function () {
+    var bits = [];
+    if (CFG.PHONE) bits.push('Phone: <a href="tel:' + esc(CFG.PHONE.replace(/[^\d+]/g, '')) + '">' + esc(CFG.PHONE) + '</a>');
+    if (CFG.EMAIL) bits.push('Email: <a href="mailto:' + esc(CFG.EMAIL) + '">' + esc(CFG.EMAIL) + '</a>');
+    $('contact-extra').innerHTML = bits.length ? bits.join('<br>') : 'Phone and email to be added.';
+  })();
+
+  /* ---------- Helpers ---------- */
+  function toast(msg) { var el = document.createElement('div'); el.className = 'toast'; el.textContent = msg; $('toast-root').innerHTML = ''; $('toast-root').appendChild(el); clearTimeout(toast.t); toast.t = setTimeout(function () { $('toast-root').innerHTML = ''; }, 3200); }
+  var tag = function (c) { var k = CONDITIONS[c] || CONDITIONS.not_confirmed; return '<span class="tag tag-' + k.tone + '">' + k.label + '</span>'; };
+  var views = ['home', 'vehicle', 'enquiry', 'about', 'apply', 'contact', 'login', 'admin'];
+  function show(name, scrollId) {
+    views.forEach(function (v) { $('view-' + v).hidden = v !== name; });
+    var t = scrollId ? $(scrollId) : null;
+    if (t && !t.closest('[hidden]')) t.scrollIntoView(); else window.scrollTo(0, 0);
+  }
+  var live = function () { return CARS.filter(function (v) { return v.status === 'published'; }); };
+  function fld(label, id, ctl) { return '<div class="field"><label for="' + id + '">' + label + '</label>' + ctl + '<div class="field-error" id="err-' + id + '" hidden></div></div>'; }
+  function showErrors(er, ids) { ids.forEach(function (id) { var el = $('err-' + id); if (el) { el.hidden = !er[id]; el.textContent = er[id] || ''; } }); }
+  function phoneOk(raw) { var c = String(raw || '').replace(/[\s\-().]/g, ''); return /^(\+27|27|0)[1-9]\d{8}$/.test(c) || /^\+[1-9]\d{7,14}$/.test(c); }
+  function normPhone(raw) { var c = String(raw).replace(/[\s\-().]/g, ''); return /^(\+27|27|0)[1-9]\d{8}$/.test(c) ? '+27' + c.replace(/^(\+27|27|0)/, '') : c; }
+  var emailOk = function (s) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '').trim()); };
+  var num = function (id) { var v = parseFloat($(id).value); return isNaN(v) ? NaN : v; };
+  var radio = function (name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; };
+  var HP = '<div class="hp" aria-hidden="true"><label>Leave this empty<input id="hp" type="text" tabindex="-1" autocomplete="off"></label></div>';
+  var PRIVACY = 'Bank Repo Cars will use your name, phone number, location, budget and payment preference only to respond to this enquiry and to manage our sales follow-up. We keep your details securely and do not sell them.';
+  function setBusy(form, busy, label) { var b = form.querySelector('button[type=submit]'); if (!b) return; if (busy) { b.dataset.t = b.textContent; b.textContent = 'Please wait…'; } else if (b.dataset.t) b.textContent = b.dataset.t; b.disabled = busy; }
+
+  /* ---------- Public: vehicle list ---------- */
+  var F = { q: '', body: '', pay: '', min: '', max: '' };
+  function cardHtml(v, preview) {
+    var ph = photosOf(v)[0], bits = [];
+    if (v.km !== null && v.km !== '' && v.km != null) bits.push('Mileage: ' + kmFmt(v.km));
+    var media = ph ? '<img src="' + esc(ph) + '" alt="' + esc(title(v)) + '" loading="lazy">' : '<div class="nophoto">Photo will show here</div>';
+    var open = preview ? '' : ' data-open="' + esc(v.stock) + '"';
+    var rtoLine = hasRto(v) ? '<div class="meta"><span class="tag tag-rto">Rent to own</span> Deposit ' + money(v.rto.deposit) + '</div>' : '';
+    return '<article class="card"><button class="card-img" type="button"' + open + (preview ? ' tabindex="-1"' : '') + ' aria-label="View ' + esc(title(v)) + '">' + media + '</button>' +
+      '<div class="card-body"><h3 class="card-title"><button type="button"' + open + '>' + esc(v.make + ' ' + v.model) + '</button></h3>' +
+      '<div class="meta">' + esc(v.year) + ' · ' + esc(v.body) + ' · Stock no. ' + esc(v.stock) + '</div>' +
+      '<div class="price">' + (v.price ? money(v.price) : 'Price not set') + '</div>' + tag(v.cond) + rtoLine +
+      '<div class="meta">' + (bits.join(' · ') || '&nbsp;') + '</div>' +
+      '<div class="card-actions"><button class="btn btn-block" type="button"' + (preview ? ' disabled' : ' data-enquire="' + esc(v.stock) + '"') + '>Inquire About This Vehicle</button>' +
+      (preview ? '' : '<button class="btn btn-outline btn-block btn-small" type="button" data-open="' + esc(v.stock) + '">View details</button>') + '</div></div></article>';
+  }
+  function renderPublic() {
+    var all = live(), cur = $('f-body').value;
+    var present = BODY_TYPES.filter(function (t) { return all.some(function (v) { return v.body === t; }); });
+    $('f-body').innerHTML = '<option value="">All body types</option>' + present.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('');
+    $('f-body').value = present.indexOf(cur) >= 0 ? cur : '';
+    F.body = $('f-body').value;
+    var q = F.q.trim().toLowerCase(), min = parseFloat(F.min), max = parseFloat(F.max);
+    var list = all.filter(function (v) {
+      if (q && (v.make + ' ' + v.model + ' ' + v.stock).toLowerCase().indexOf(q) < 0) return false;
+      if (F.body && v.body !== F.body) return false;
+      if (F.pay === 'rto' && !hasRto(v)) return false;
+      if (!isNaN(min) && v.price < min) return false;
+      if (!isNaN(max) && v.price > max) return false;
+      return true;
+    });
+    var msg = carsState === 'loading' ? 'Loading vehicles…' : carsState === 'noconfig' ? 'This website is not connected to its database yet. Open index.html and fill in the two settings at the top.' : carsState === 'error' ? 'We could not load the vehicles. Please refresh the page.' : all.length ? 'No vehicles match your search. Try clearing the filters.' : 'No vehicles are listed right now. Please check back soon.';
+    $('empty').hidden = list.length > 0; $('empty').textContent = msg;
+    $('grid').innerHTML = list.map(function (v) { return cardHtml(v); }).join('');
+  }
+  $('f-q').addEventListener('input', function (e) { F.q = e.target.value; renderPublic(); });
+  $('f-body').addEventListener('change', function (e) { F.body = e.target.value; renderPublic(); });
+  $('f-pay').addEventListener('change', function (e) { F.pay = e.target.value; renderPublic(); });
+  $('f-min').addEventListener('input', function (e) { F.min = e.target.value; renderPublic(); });
+  $('f-max').addEventListener('input', function (e) { F.max = e.target.value; renderPublic(); });
+  $('f-clear').addEventListener('click', function () { F = { q: '', body: '', pay: '', min: '', max: '' }; $('filters').reset(); renderPublic(); });
+
+  /* ---------- Public: vehicle page ---------- */
+  function rtoBox(v) {
+    if (!hasRto(v)) return '<div class="rto-box"><b>Cash only</b>This vehicle is sold for cash. Rent to own is not available on it.</div>';
+    return '<div class="rto-box"><b>Rent to own available</b><div class="rto-row"><span>Deposit</span><span>' + money(v.rto.deposit) + '</span></div>' + rtoTerms(v).map(function (t) { return '<div class="rto-row"><span>' + t[0] + ' months</span><span>' + money(t[1]) + ' per month</span></div>'; }).join('') + '</div>';
+  }
+  function openCar(stock) {
+    var v = find(stock); if (!v) return;
+    var ph = photosOf(v), sold = v.status === 'sold';
+    var specs = [['Make', v.make], ['Model', v.model], ['Year model', v.year], ['Body type', v.body], ['Mileage', v.km != null && v.km !== '' ? kmFmt(v.km) : null], ['Stock number', v.stock]].filter(function (r) { return r[1] !== null && r[1] !== ''; });
+    $('vehicle-body').innerHTML = '<button class="linkback" type="button" data-go="browse">← Back to all vehicles</button><h1>' + esc(title(v)) + '</h1>' +
+      '<div class="vehicle-layout"><div><div class="gallery-main">' + (ph[0] ? '<img id="main-photo" src="' + esc(ph[0]) + '" alt="' + esc(title(v)) + '">' : '<div class="nophoto">No photo yet</div>') + '</div>' +
+      (ph.length > 1 ? '<div class="thumbs">' + ph.map(function (p, n) { return '<button type="button" data-photo="' + n + '" data-stock="' + esc(v.stock) + '" aria-label="Show photo ' + (n + 1) + '"' + (n === 0 ? ' aria-current="true"' : '') + '><img src="' + esc(p) + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '') + '</div>' +
+      '<div><div class="panel"><div class="meta">Cash price</div><div class="price-lg">' + money(v.price) + '</div><p class="meta">Stock no. ' + esc(v.stock) + '</p>' + (sold ? '' : rtoBox(v)) +
+      (sold ? '<span class="tag tag-sold">Sold – no longer available</span>' : '<button class="btn btn-block" type="button" data-enquire="' + esc(v.stock) + '">Inquire About This Vehicle</button>' + (hasRto(v) ? '<button class="btn btn-outline btn-block" style="margin-top:8px" type="button" data-apply="' + esc(v.stock) + '">Apply for rent to own</button>' : '')) + '</div>' +
+      '<div class="panel"><h3>Condition</h3>' + tag(v.cond) + '<h3 style="margin-top:14px">Description</h3><p style="white-space:pre-line;margin:0">' + (v.desc ? esc(v.desc) : '<span class="muted">No description yet.</span>') + '</p></div>' +
+      '<div class="panel" style="padding:0"><table class="spec-table"><tbody>' + specs.map(function (r) { return '<tr><th>' + r[0] + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</tbody></table></div></div></div>';
+    show('vehicle');
+  }
+
+  /* ---------- Public: enquiry ---------- */
+  function openEnquiry(stock) {
+    var v = find(stock); if (!v) return; var ph = photosOf(v)[0];
+    $('enquiry-body').innerHTML = '<button class="linkback" type="button" data-open="' + esc(v.stock) + '">← Back to vehicle</button><h1>Inquire About This Vehicle</h1>' +
+      '<div class="panel" style="display:flex;gap:14px;align-items:center">' + (ph ? '<img src="' + esc(ph) + '" alt="" style="width:96px;aspect-ratio:4/3;object-fit:cover">' : '') + '<div><strong>' + esc(title(v)) + '</strong><div class="meta">Stock no. ' + esc(v.stock) + '</div><div class="price">' + money(v.price) + '</div></div></div>' +
+      '<form class="panel" id="enq" novalidate><p class="small muted">Stock number <strong>' + esc(v.stock) + '</strong> will be attached to your enquiry automatically.</p>' + HP + '<div class="form-grid">' + fld('First name', 'e-first', '<input id="e-first" type="text" autocomplete="given-name" maxlength="60">') + fld('Surname', 'e-sur', '<input id="e-sur" type="text" autocomplete="family-name" maxlength="60">') + '</div>' +
+      fld('Phone or WhatsApp number', 'e-phone', '<input id="e-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="082 123 4567" maxlength="20">') +
+      fld('Town or city where you live', 'e-loc', '<input id="e-loc" type="text" autocomplete="address-level2" maxlength="80">') +
+      fld('Budget range', 'e-budget', '<select id="e-budget"><option value="">Choose…</option>' + BUDGETS.map(function (b) { return '<option>' + b + '</option>'; }).join('') + '</select>') +
+      fld('Preferred payment method', 'e-pay', '<select id="e-pay"><option value="">Choose…</option>' + PAYMENTS.map(function (b) { return '<option>' + b + '</option>'; }).join('') + '</select>') +
+      '<div class="notice small"><strong>Privacy notice.</strong> ' + PRIVACY + '</div>' +
+      '<div class="field"><label class="checkbox" for="e-consent"><input id="e-consent" type="checkbox"><span>I have read the privacy notice and agree that Bank Repo Cars may contact me about this vehicle.</span></label><div class="field-error" id="err-e-consent" hidden></div></div>' +
+      '<div class="field-error" id="e-fail" hidden></div><button class="btn btn-block" type="submit">Submit Enquiry</button><p class="small muted" style="margin-top:10px">After your enquiry is saved, you can open WhatsApp with a message ready. You must press Send in WhatsApp to send it.</p></form><div id="enq-result"></div>';
+    show('enquiry');
+    $('enq').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var form = e.target, f = { first: $('e-first').value.trim(), sur: $('e-sur').value.trim(), phone: $('e-phone').value, loc: $('e-loc').value.trim(), budget: $('e-budget').value, pay: $('e-pay').value }, er = {};
+      if (f.first.length < 2) er['e-first'] = 'Please enter your first name.';
+      if (f.sur.length < 2) er['e-sur'] = 'Please enter your surname.';
+      if (!phoneOk(f.phone)) er['e-phone'] = 'Enter a valid phone number, for example 082 123 4567.';
+      if (f.loc.length < 2) er['e-loc'] = 'Please enter your town or city.';
+      if (!f.budget) er['e-budget'] = 'Please choose a budget range.';
+      if (!f.pay) er['e-pay'] = 'Please choose a payment method.';
+      if (!$('e-consent').checked) er['e-consent'] = 'Please confirm that you have read the privacy notice.';
+      showErrors(er, ['e-first', 'e-sur', 'e-phone', 'e-loc', 'e-budget', 'e-pay', 'e-consent']);
+      if (Object.keys(er).length) return;
+      $('e-fail').hidden = true; setBusy(form, true);
+      fetch(FN_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_ANON_KEY }, body: JSON.stringify({ type: 'enquiry', stock: v.stock, first: f.first, sur: f.sur, phone: f.phone, location: f.loc, budget: f.budget, payment: f.pay, consent: true, website: $('hp').value }) })
+        .then(function (r) { return r.json(); })
+        .then(function (res) {
+          if (!res.ok) throw new Error(res.error || 'failed');
+          form.hidden = true;
+          $('enq-result').innerHTML = '<div class="panel"><div class="notice notice-ok"><strong>Your enquiry has been saved.</strong></div>' +
+            (res.whatsappUrl ? '<p>Press the button to open WhatsApp with your message ready for our sales team. <strong>You still need to press Send in WhatsApp.</strong></p><p><a class="btn btn-whatsapp" href="' + esc(res.whatsappUrl) + '" target="_blank" rel="noopener noreferrer">Open WhatsApp</a></p><pre class="wa" id="wa-text"></pre>' : '<p>Our sales team will contact you on the number you gave.</p>') +
+            '<button class="btn btn-outline" type="button" data-go="browse">Back to all vehicles</button></div>';
+          if ($('wa-text')) $('wa-text').textContent = res.message;
+          window.scrollTo(0, 0);
+        })
+        .catch(function (err) { setBusy(form, false); var m = err && err.message && err.message !== 'failed' && err.message !== 'Failed to fetch' ? err.message : 'We could not send your enquiry. Please check your connection and try again.'; $('e-fail').textContent = m; $('e-fail').hidden = false; });
+    });
+  }
+
+  /* ---------- Public: rent to own application ---------- */
+  var AP = { files: {} };
+  function openApply(stock) {
+    AP = { files: {} };
+    var cars = live().filter(hasRto), sel = stock && find(stock) && hasRto(find(stock)) ? stock : '';
+    var yn = function (name) { return '<div class="row"><label class="checkbox" style="font-weight:400"><input type="radio" name="' + name + '" value="yes"><span>Yes</span></label><label class="checkbox" style="font-weight:400"><input type="radio" name="' + name + '" value="no"><span>No</span></label></div><div class="field-error" id="err-' + name + '" hidden></div>'; };
+    var money_in = function (id, label) { return fld(label, id, '<input id="' + id + '" type="number" min="0" inputmode="numeric">'); };
+    $('apply-body').innerHTML = '<h1>Rent to own application</h1><p class="lead-in">Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle\'s price, then pay monthly over 48 or 54 months.</p>' +
+      '<form id="ap" novalidate>' + HP +
+      '<div class="panel"><h2 class="sub" style="margin-top:0">1. The vehicle</h2>' +
+      fld('Choose a rent to own vehicle', 'ap-stock', '<select id="ap-stock"><option value="">Choose a vehicle…</option>' + cars.map(function (v) { return '<option value="' + esc(v.stock) + '"' + (v.stock === sel ? ' selected' : '') + '>' + esc(title(v) + ' · ' + money(v.price) + ' · ' + v.stock) + '</option>'; }).join('') + '</select>') +
+      '<div id="ap-terms"></div><div class="field-error" id="err-ap-term" hidden></div></div>' +
+      '<div class="panel"><h2 class="sub" style="margin-top:0">2. About you</h2><div class="form-grid">' + fld('Name', 'ap-first', '<input id="ap-first" type="text" autocomplete="given-name" maxlength="60">') + fld('Surname', 'ap-sur', '<input id="ap-sur" type="text" autocomplete="family-name" maxlength="60">') + '</div>' +
+      '<div class="form-grid">' + fld('Phone or WhatsApp number', 'ap-phone', '<input id="ap-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="082 123 4567" maxlength="20">') + fld('Email address', 'ap-email', '<input id="ap-email" type="text" inputmode="email" autocomplete="email" maxlength="120">') + '</div>' +
+      '<div class="field"><label>Are you married?</label>' + yn('ap-married') + '</div>' +
+      '<div class="field hidden-box" id="mdate-box" hidden><label for="ap-mdate">Date married</label><input id="ap-mdate" type="date"><div class="field-error" id="err-ap-mdate" hidden></div></div>' +
+      fld('Home address', 'ap-home', '<textarea id="ap-home" maxlength="300" style="min-height:72px"></textarea>') + '</div>' +
+      '<div class="panel"><h2 class="sub" style="margin-top:0">3. Next of kin (not your wife or husband)</h2>' +
+      fld('Next of kin name <span class="req">*</span>', 'ap-nok', '<input id="ap-nok" type="text" maxlength="100">') + fld('Their address (different to yours) <span class="req">*</span>', 'ap-nok-addr', '<textarea id="ap-nok-addr" maxlength="300" style="min-height:72px"></textarea>') + fld('Their contact details <span class="req">*</span>', 'ap-nok-contact', '<input id="ap-nok-contact" type="text" maxlength="80">') + '</div>' +
+      '<div class="panel"><h2 class="sub" style="margin-top:0">4. Work</h2>' + fld('Company or business name', 'ap-co', '<input id="ap-co" type="text" maxlength="120">') + fld('Period employed (or in business)', 'ap-period', '<input id="ap-period" type="text" maxlength="60" placeholder="e.g. 3 years">') + fld('Company address', 'ap-co-addr', '<textarea id="ap-co-addr" maxlength="300" style="min-height:72px"></textarea>') + fld('Company contact details', 'ap-co-contact', '<input id="ap-co-contact" type="text" maxlength="80">') + '</div>' +
+      '<div class="panel"><h2 class="sub" style="margin-top:0">5. Bank and income</h2><div class="form-grid">' + fld('Bank', 'ap-bank', '<input id="ap-bank" type="text" maxlength="60">') + fld('Account number', 'ap-acc', '<input id="ap-acc" type="text" inputmode="numeric" maxlength="20" autocomplete="off">') + money_in('ap-gross', 'Gross income (R per month)') + money_in('ap-net', 'Net income (R per month)') + '</div>' +
+      '<div class="field"><label>Do you have a bond?</label>' + yn('ap-bond') + '</div>' +
+      '<div class="form-grid hidden-box" id="bond-box" hidden>' + fld('Which bank?', 'ap-bond-bank', '<input id="ap-bond-bank" type="text" maxlength="60">') + money_in('ap-bond-inst', 'Bond installment (R per month)') + '</div></div>' +
+      '<div class="panel"><h2 class="sub" style="margin-top:0">6. Monthly expenses <span class="req">*</span></h2><p class="small muted">List all your expenses in rand per month. Enter 0 if you have none. "Other" is optional.</p><div class="form-grid three">' +
+      EXPENSES.map(function (x) { return money_in('ap-x-' + x[0], x[1]); }).join('') + '</div><div class="total-line"><span>Total expenses</span><span id="x-total">R0</span></div></div>' +
+      '<div class="panel"><h2 class="sub" style="margin-top:0">7. Your documents</h2><div class="opt-row"><label class="opt"><input type="radio" name="ap-emp" value="employed" checked><span><b>I am employed</b><small>I receive a payslip.</small></span></label><label class="opt"><input type="radio" name="ap-emp" value="self"><span><b>I am self-employed or own a business</b><small>I do not receive a payslip.</small></span></label></div><div class="docs" id="ap-docs"></div></div>' +
+      '<div class="panel"><div class="notice small"><strong>Privacy notice.</strong> Bank Repo Cars will use your details and documents only to assess your rent to own application and to contact you about it. We keep them securely, only our authorised staff can see them, and we do not sell them.</div>' +
+      '<div class="field"><label class="checkbox" for="ap-consent"><input id="ap-consent" type="checkbox"><span>I have read the privacy notice, I confirm the information I gave is true, and I agree that Bank Repo Cars may use my details and documents to assess my application.</span></label><div class="field-error" id="err-ap-consent" hidden></div></div>' +
+      '<div class="field-error" id="ap-fail" hidden></div><button class="btn btn-block" type="submit">Submit application</button><p class="small muted" style="margin-top:10px">Submitting an application does not mean it is approved. Our sales team will contact you.</p></div></form><div id="ap-result"></div>';
+    drawTerms(); drawDocs(); drawTotal(); show('apply');
+  }
+  function drawTerms() {
+    var v = find($('ap-stock').value), el = $('ap-terms'), keep = radio('ap-term');
+    if (!v) { el.innerHTML = '<p class="muted">Choose a vehicle to see its deposit and monthly amount.</p>'; return; }
+    var t = rtoTerms(v);
+    el.innerHTML = '<div class="rto-box"><b>' + esc(title(v)) + '</b><div class="rto-row"><span>Cash price</span><span>' + money(v.price) + '</span></div><div class="rto-row"><span>Deposit for rent to own</span><span><b style="display:inline">' + money(v.rto.deposit) + '</b></span></div></div>' +
+      '<label>Choose your payment period</label><div class="opt-row">' + t.map(function (x) { return '<label class="opt"><input type="radio" name="ap-term" value="' + x[0] + '"' + (String(x[0]) === keep || t.length === 1 ? ' checked' : '') + '><span><b>' + x[0] + ' months</b><small>' + money(x[1]) + ' per month</small></span></label>'; }).join('') + '</div>';
+  }
+  function drawDocs() {
+    var emp = radio('ap-emp') || 'employed', list = DOCS[emp];
+    $('ap-docs').innerHTML = '<p class="small muted" style="margin-top:0">Documents needed ' + (emp === 'self' ? 'if you are self-employed or own a business' : 'if you are employed') + '. Attach a clear photo or PDF of each (up to 10 MB per file). Where it says so, you can attach more than one file.</p>' +
+      list.map(function (d) { return '<div class="doc"><label for="doc-' + d[0] + '"><b>' + d[1] + '</b> <span class="req">*</span></label><input id="doc-' + d[0] + '" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" data-doc="' + d[0] + '"' + (d[2] ? ' multiple' : '') + '><div class="fn" id="fn-' + d[0] + '">' + fileNames(d[0]) + '</div><div class="field-error" id="err-doc-' + d[0] + '" hidden></div></div>'; }).join('');
+  }
+  function fileNames(k) { var f = AP.files[k]; return f && f.length ? '✓ ' + f.map(function (x) { return esc(x.name); }).join(', ') : ''; }
+  function drawTotal() { var t = 0; EXPENSES.forEach(function (x) { var v = parseFloat($('ap-x-' + x[0]).value); if (!isNaN(v)) t += v; }); $('x-total').textContent = money(t); }
+  function submitApply(form) {
+    var er = {}, emp = radio('ap-emp') || 'employed', v = find($('ap-stock').value), g = function (id) { return $(id).value.trim(); };
+    var ids = ['ap-stock', 'ap-first', 'ap-sur', 'ap-phone', 'ap-email', 'ap-home', 'ap-nok', 'ap-nok-addr', 'ap-nok-contact', 'ap-co', 'ap-period', 'ap-co-addr', 'ap-co-contact', 'ap-bank', 'ap-acc', 'ap-gross', 'ap-net', 'ap-married', 'ap-bond', 'ap-term', 'ap-mdate', 'ap-bond-bank', 'ap-bond-inst', 'ap-consent'];
+    if (!v) er['ap-stock'] = 'Please choose a vehicle.'; else if (!radio('ap-term')) er['ap-term'] = 'Please choose a payment period.';
+    if (g('ap-first').length < 2) er['ap-first'] = 'Please enter your name.';
+    if (g('ap-sur').length < 2) er['ap-sur'] = 'Please enter your surname.';
+    if (!phoneOk($('ap-phone').value)) er['ap-phone'] = 'Enter a valid phone number, for example 082 123 4567.';
+    if (!emailOk($('ap-email').value)) er['ap-email'] = 'Enter a valid email address.';
+    if (!radio('ap-married')) er['ap-married'] = 'Please choose Yes or No.';
+    if (radio('ap-married') === 'yes' && !$('ap-mdate').value) er['ap-mdate'] = 'Please enter the date you were married.';
+    if (g('ap-home').length < 5) er['ap-home'] = 'Please enter your home address.';
+    if (g('ap-nok').length < 2) er['ap-nok'] = 'Please enter your next of kin.';
+    if (g('ap-nok-addr').length < 5) er['ap-nok-addr'] = 'Please enter their address.';
+    if (g('ap-nok-contact').length < 5) er['ap-nok-contact'] = 'Please enter their contact details.';
+    if (g('ap-co').length < 2) er['ap-co'] = 'Please enter the company or business name.';
+    if (g('ap-period').length < 1) er['ap-period'] = 'Please enter how long you have been employed.';
+    if (g('ap-co-addr').length < 5) er['ap-co-addr'] = 'Please enter the company address.';
+    if (g('ap-co-contact').length < 5) er['ap-co-contact'] = 'Please enter the company contact details.';
+    if (g('ap-bank').length < 2) er['ap-bank'] = 'Please enter your bank.';
+    if (!/^\d{5,16}$/.test(g('ap-acc').replace(/\s/g, ''))) er['ap-acc'] = 'Enter your account number using digits only.';
+    if (isNaN(num('ap-gross')) || num('ap-gross') < 0) er['ap-gross'] = 'Enter your gross income.';
+    if (isNaN(num('ap-net')) || num('ap-net') < 0) er['ap-net'] = 'Enter your net income.';
+    if (!radio('ap-bond')) er['ap-bond'] = 'Please choose Yes or No.';
+    if (radio('ap-bond') === 'yes') { if (g('ap-bond-bank').length < 2) er['ap-bond-bank'] = 'Please enter the bank.'; if (isNaN(num('ap-bond-inst')) || num('ap-bond-inst') < 0) er['ap-bond-inst'] = 'Enter the bond installment.'; }
+    EXPENSES.forEach(function (x) { var id = 'ap-x-' + x[0]; ids.push(id); if (x[0] !== 'other' && (isNaN(num(id)) || num(id) < 0)) er[id] = 'Enter an amount, or 0.'; else if (x[0] === 'other' && $(id).value !== '' && num(id) < 0) er[id] = 'Enter an amount, or leave empty.'; });
+    DOCS[emp].forEach(function (d) { ids.push('doc-' + d[0]); if (!(AP.files[d[0]] && AP.files[d[0]].length)) er['doc-' + d[0]] = 'Please attach this document.'; });
+    if (!$('ap-consent').checked) er['ap-consent'] = 'Please confirm that you have read the privacy notice.';
+    showErrors(er, ids);
+    if (Object.keys(er).length) { var first = document.querySelector('#ap .field-error:not([hidden])'); if (first) first.scrollIntoView({ block: 'center' }); return; }
+    var x = {}; EXPENSES.forEach(function (e) { x[e[0]] = isNaN(num('ap-x-' + e[0])) ? 0 : num('ap-x-' + e[0]); });
+    var f = { first: g('ap-first'), sur: g('ap-sur'), phone: normPhone($('ap-phone').value), email: g('ap-email'), married: radio('ap-married'), mdate: radio('ap-married') === 'yes' ? $('ap-mdate').value : '', home: g('ap-home'), nokAddr: g('ap-nok-addr'), nok: g('ap-nok'), nokContact: g('ap-nok-contact'), co: g('ap-co'), period: g('ap-period'), coAddr: g('ap-co-addr'), coContact: g('ap-co-contact'), bank: g('ap-bank'), acc: g('ap-acc').replace(/\s/g, ''), gross: num('ap-gross'), net: num('ap-net'), bond: radio('ap-bond'), bondBank: g('ap-bond-bank'), bondInst: radio('ap-bond') === 'yes' ? num('ap-bond-inst') : '', x: x };
+    var fd = new FormData();
+    fd.append('data', JSON.stringify({ stock: v.stock, term: +radio('ap-term'), emp: emp, f: f, consent: true }));
+    fd.append('website', $('hp').value);
+    DOCS[emp].forEach(function (d) { (AP.files[d[0]] || []).forEach(function (file) { fd.append('doc_' + d[0], file, file.name); }); });
+    $('ap-fail').hidden = true; setBusy(form, true);
+    fetch(FN_URL, { method: 'POST', headers: { apikey: CFG.SUPABASE_ANON_KEY }, body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error || 'failed');
+        form.hidden = true;
+        $('ap-result').innerHTML = '<div class="panel"><div class="notice notice-ok"><strong>Your application has been received.</strong> Reference: ' + esc(res.ref) + '.</div><p>Thank you, ' + esc(f.first) + '. Our sales team will review your rent to own application for the ' + esc(title(v)) + ' and contact you on ' + esc(f.phone) + '. This is not an approval.</p><button class="btn btn-outline" type="button" data-go="browse">Back to all vehicles</button></div>';
+        window.scrollTo(0, 0);
+      })
+      .catch(function (err) { setBusy(form, false); var m = err && err.message && err.message !== 'failed' && err.message !== 'Failed to fetch' ? err.message : 'We could not send your application. Please check your connection and try again.'; $('ap-fail').textContent = m; $('ap-fail').hidden = false; $('ap-fail').scrollIntoView({ block: 'center' }); });
+  }
+
+  /* ---------- Admin ---------- */
+  var adminIn = false;
+  var A = { tab: 'leads', lq: '', lstatus: '', astatus: '' };
+  function head(t, extra) { return '<div class="page-head"><h1>' + t + '</h1><div>' + (extra || '') + '</div></div>'; }
+  function renderAdmin() {
+    document.querySelectorAll('[data-admin]').forEach(function (b) { b.setAttribute('aria-current', (b.dataset.admin === A.tab || (A.tab === 'editor' && b.dataset.admin === 'cars')) ? 'true' : 'false'); });
+    ({ leads: viewLeads, apps: viewApps, cars: viewCars, editor: viewEditor })[A.tab]();
+  }
+  function seg(attr, items, cur, counts) { return '<div class="seg">' + items.map(function (s) { return '<button type="button" ' + attr + '="' + s[0] + '" aria-pressed="' + (cur === s[0]) + '">' + s[1] + (counts ? ' (' + counts(s[0]) + ')' : '') + '</button>'; }).join('') + '</div>'; }
+  function checkAdmin() {
+    if (!sb) return Promise.resolve(false);
+    return sb.auth.getSession().then(function (s) {
+      var sess = s.data && s.data.session; if (!sess) return false;
+      return sb.from('admins').select('user_id').eq('user_id', sess.user.id).maybeSingle().then(function (r) { return !!r.data; });
+    }).catch(function () { return false; });
+  }
+  function enterAdmin() {
+    return Promise.all([loadCars(), loadLeads(), loadApps()]).then(function () { adminIn = true; renderAdmin(); show('admin'); renderPublic(); });
+  }
+  function route() {
+    if (location.hash === '#admin') {
+      checkAdmin().then(function (ok) { if (location.hash !== '#admin') return; if (ok) enterAdmin(); else { adminIn = false; show('login'); } });
+    } else if (!$('view-login').hidden || !$('view-admin').hidden) show('home');
+  }
+
+  function viewLeads() {
+    var n = LEADS.filter(function (l) { return l.status === 'new'; }).length;
+    $('admin-body').innerHTML = head('Leads', '<span class="tag tag-' + (n ? 'warn' : 'ok') + '">' + n + ' new</span>') +
+      '<p class="muted small">Every enquiry from the website is saved here, even if the customer never presses Send in WhatsApp.</p>' +
+      '<div class="field" style="max-width:420px"><label for="l-q">Search name, phone or stock number</label><input id="l-q" type="text" value="' + esc(A.lq) + '"></div><div id="l-seg"></div><div id="lead-list"></div>';
+    drawLeads();
+  }
+  function drawLeads() {
+    var q = A.lq.toLowerCase();
+    var base = LEADS.filter(function (l) { return !q || (l.first + ' ' + l.surname + ' ' + l.phone + ' ' + l.stock).toLowerCase().indexOf(q) >= 0; });
+    $('l-seg').innerHTML = seg('data-lstatus', [['', 'All']].concat(STATUSES.map(function (s) { return [s, SLABEL[s]]; })), A.lstatus, function (s) { return s ? base.filter(function (l) { return l.status === s; }).length : base.length; });
+    var list = base.filter(function (l) { return !A.lstatus || l.status === A.lstatus; });
+    $('lead-list').innerHTML = list.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>Received</th><th>Customer</th><th>Phone</th><th>Location</th><th>Vehicle</th><th>Budget</th><th>Payment</th><th>Status</th></tr></thead><tbody>' +
+      list.map(function (l) { return '<tr data-lead="' + l.id + '" tabindex="0"><td>' + dt(l.at) + '<br><span class="muted">' + ago(l.at) + '</span></td><td><b>' + esc(l.first + ' ' + l.surname) + '</b></td><td>' + esc(l.phone) + '</td><td>' + esc(l.location) + '</td><td>' + esc(l.vtitle) + '<br><span class="muted">Stock ' + esc(l.stock) + ' · ' + money(l.price) + '</span></td><td>' + esc(l.budget) + '</td><td>' + esc(l.pay) + '</td><td class="status">' + SLABEL[l.status] + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="notice">No leads found.</div>';
+  }
+  function drawerShell(inner) { $('overlay-root').innerHTML = '<div class="overlay" data-close-overlay><div class="drawer" role="dialog" aria-label="Details">' + inner + '</div></div>'; }
+  function specRows(rows) { return '<div class="panel" style="padding:0"><table class="spec-table"><tbody>' + rows.filter(function (r) { return r[1] !== '' && r[1] != null; }).map(function (r) { return '<tr><th>' + r[0] + '</th><td style="white-space:pre-line">' + esc(r[1]) + '</td></tr>'; }).join('') + '</tbody></table></div>'; }
+  function openLead(id) {
+    var l = LEADS.filter(function (x) { return x.id === id; })[0]; if (!l) return;
+    drawerShell('<div class="row" style="justify-content:space-between"><h2 style="margin:0">' + esc(l.first + ' ' + l.surname) + '</h2><button class="btn btn-outline btn-small" type="button" data-close-overlay-btn>Close</button></div>' +
+      '<p class="muted small" style="margin-top:6px">Received ' + dt(l.at) + ' (' + ago(l.at) + ')</p><p><a class="btn btn-whatsapp btn-small" href="https://wa.me/' + l.phone.replace(/\D/g, '') + '" target="_blank" rel="noopener noreferrer">WhatsApp customer</a></p>' +
+      '<label class="small"><b>Status</b></label>' + seg('data-setlead="' + l.id + '" data-status', STATUSES.map(function (s) { return [s, SLABEL[s]]; }), l.status) +
+      specRows([['Phone', l.phone], ['Location', l.location], ['Budget', l.budget], ['Payment', l.pay], ['Vehicle', l.vtitle], ['Stock number', l.stock], ['Listed price', money(l.price)]]) +
+      '<h3>Internal notes</h3>' + (l.notes.length ? l.notes.map(function (n) { return '<div class="note"><span class="muted small">' + dt(n.at) + '</span><br>' + esc(n.text) + '</div>'; }).join('') : '<p class="muted">No notes yet.</p>') +
+      '<div class="field" style="margin-top:10px"><label for="note-text">Add a note</label><textarea id="note-text" maxlength="500"></textarea></div><button class="btn btn-small" type="button" data-addnote="' + l.id + '">Save note</button>');
+  }
+
+  function viewApps() {
+    var n = APPS.filter(function (a) { return a.status === 'new'; }).length;
+    $('admin-body').innerHTML = head('Applications', '<span class="tag tag-' + (n ? 'warn' : 'ok') + '">' + n + ' new</span>') +
+      '<p class="muted small">Rent to own applications with the answers and documents each customer submitted.</p><div id="a-seg"></div><div id="app-list"></div>';
+    drawApps();
+  }
+  function drawApps() {
+    $('a-seg').innerHTML = seg('data-astatus', [['', 'All']].concat(ASTATUS.map(function (s) { return [s, ALABEL[s]]; })), A.astatus, function (s) { return s ? APPS.filter(function (a) { return a.status === s; }).length : APPS.length; });
+    var list = APPS.filter(function (a) { return !A.astatus || a.status === A.astatus; });
+    $('app-list').innerHTML = list.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>Received</th><th>Applicant</th><th>Phone</th><th>Vehicle</th><th>Deposit</th><th>Plan</th><th>Net income</th><th>Work</th><th>Status</th></tr></thead><tbody>' +
+      list.map(function (a) { return '<tr data-app="' + a.id + '" tabindex="0"><td>' + dt(a.at) + '</td><td><b>' + esc(a.f.first + ' ' + a.f.sur) + '</b></td><td>' + esc(a.f.phone) + '</td><td>' + esc(a.vtitle) + '<br><span class="muted">Stock ' + esc(a.stock) + '</span></td><td>' + money(a.deposit) + '</td><td>' + a.term + ' months<br><span class="muted">' + money(a.monthly) + ' per month</span></td><td>' + money(a.f.net) + '</td><td>' + (a.emp === 'self' ? 'Self-employed' : 'Employed') + '</td><td class="status">' + ALABEL[a.status] + '</td></tr>'; }).join('') + '</tbody></table></div>' : '<div class="notice">No applications found.</div>';
+  }
+  function openApp(id) {
+    var a = APPS.filter(function (x) { return x.id === id; })[0]; if (!a) return; var f = a.f;
+    var exp = EXPENSES.map(function (e) { return [e[1], f.x[e[0]] ? money(f.x[e[0]]) : (e[0] === 'other' ? '' : money(0))]; });
+    var total = EXPENSES.reduce(function (s, e) { return s + (f.x[e[0]] || 0); }, 0);
+    drawerShell('<div class="row" style="justify-content:space-between"><h2 style="margin:0">' + esc(f.first + ' ' + f.sur) + '</h2><button class="btn btn-outline btn-small" type="button" data-close-overlay-btn>Close</button></div>' +
+      '<p class="muted small" style="margin-top:6px">Rent to own · received ' + dt(a.at) + ' · ' + esc(a.ref) + '</p><p><a class="btn btn-whatsapp btn-small" href="https://wa.me/' + String(f.phone).replace(/\D/g, '') + '" target="_blank" rel="noopener noreferrer">WhatsApp applicant</a></p>' +
+      '<label class="small"><b>Status</b></label>' + seg('data-setapp="' + a.id + '" data-status', ASTATUS.map(function (s) { return [s, ALABEL[s]]; }), a.status) +
+      '<h3>Vehicle and plan</h3>' + specRows([['Vehicle', a.vtitle + ' (' + a.stock + ')'], ['Cash price', money(a.price)], ['Deposit', money(a.deposit)], ['Plan', a.term + ' months at ' + money(a.monthly) + ' per month']]) +
+      '<h3>About the applicant</h3>' + specRows([['Phone', f.phone], ['Email', f.email], ['Married', f.married === 'yes' ? 'Yes, married ' + f.mdate : 'No'], ['Home address', f.home]]) +
+      '<h3>Next of kin</h3>' + specRows([['Name', f.nok], ['Address', f.nokAddr], ['Contact', f.nokContact]]) +
+      '<h3>Work</h3>' + specRows([['Company', f.co], ['Period employed', f.period], ['Company address', f.coAddr], ['Company contact', f.coContact], ['Employment type', a.emp === 'self' ? 'Self-employed or business owner' : 'Employed']]) +
+      '<h3>Bank and income</h3>' + specRows([['Bank', f.bank], ['Account number', f.acc], ['Gross income', money(f.gross)], ['Net income', money(f.net)], ['Bond', f.bond === 'yes' ? 'Yes: ' + f.bondBank + ', ' + money(f.bondInst) + ' per month' : 'No']]) +
+      '<h3>Monthly expenses</h3>' + specRows(exp.concat([['Total', money(total)]])) +
+      '<h3>Documents received</h3><div class="panel">' + a.docs.map(function (d) { return '<div class="doc"><b>' + esc(d.label) + '</b>' + d.files.map(function (p) { return '<div class="fn"><button type="button" class="linkback" style="margin:0" data-docpath="' + esc(p) + '">Open: ' + esc(p.split('/').pop().replace(/^[a-z]+-\d+-/, '')) + '</button></div>'; }).join('') + '</div>'; }).join('') + '</div>');
+  }
+
+  function viewCars() {
+    $('admin-body').innerHTML = head('Cars', '<button class="btn" type="button" data-new-car>+ Upload a car</button>') +
+      (CARS.length ? CARS.map(function (v) {
+        var ph = photosOf(v)[0], st = v.status;
+        return '<div class="vrow">' + (ph ? '<img class="thumb" src="' + esc(ph) + '" alt="">' : '<div class="thumb none">No photo</div>') +
+          '<div><b>' + esc(title(v)) + '</b><div class="muted small">Stock ' + esc(v.stock) + ' · ' + money(v.price) + (hasRto(v) ? ' · Rent to own' : ' · Cash only') + '</div></div>' +
+          '<div class="vmeta"><span class="status">' + (st === 'published' ? 'Showing on site' : st === 'sold' ? 'Sold' : 'Hidden') + '</span><div class="row"><button class="btn btn-small btn-outline" type="button" data-edit="' + esc(v.stock) + '">Edit</button>' +
+          (st === 'published' ? '<button class="btn btn-small btn-outline" type="button" data-cstatus="hidden" data-stock="' + esc(v.stock) + '">Hide</button><button class="btn btn-small btn-outline" type="button" data-cstatus="sold" data-stock="' + esc(v.stock) + '">Mark sold</button>' : '<button class="btn btn-small" type="button" data-cstatus="published" data-stock="' + esc(v.stock) + '">Show on site</button>') + '</div></div></div>';
+      }).join('') : '<div class="notice">No cars yet. Upload the first one.</div>');
+  }
+
+  var ED = null;
+  function nextStock() { var m = 100; CARS.forEach(function (v) { var x = /^BRC-(\d+)$/.exec(v.stock); if (x) m = Math.max(m, +x[1]); }); return 'BRC-' + (m + 1); }
+  function openEditor(stock) {
+    if (stock) { var v = find(stock), r = v.rto; ED = { id: v.id, orig: v.stock, removed: [], d: { stock: v.stock, make: v.make, model: v.model, year: v.year, km: v.km == null ? '' : v.km, price: v.price, body: v.body, cond: v.cond, desc: v.desc, rto: !!r, dep: r ? r.deposit : '', m48: r && r.m48 ? r.m48 : '', m54: r && r.m54 ? r.m54 : '', depEdited: !!r && r.deposit !== depositFor(v.price) }, photos: v.photos.slice() }; }
+    else ED = { id: null, orig: null, removed: [], d: { stock: nextStock(), make: '', model: '', year: '', km: '', price: '', body: '', cond: 'not_confirmed', desc: '', rto: false, dep: '', m48: '', m54: '', depEdited: false }, photos: [] };
+    A.tab = 'editor'; renderAdmin(); show('admin');
+  }
+  function edCar() { var d = ED.d; return { stock: d.stock.trim(), make: d.make.trim(), model: d.model.trim(), year: +d.year, km: d.km === '' ? null : +d.km, price: +d.price || 0, body: d.body, cond: d.cond, desc: d.desc, photos: ED.photos.slice(), rto: d.rto ? { deposit: +d.dep || 0, m48: +d.m48 > 0 ? +d.m48 : null, m54: +d.m54 > 0 ? +d.m54 : null } : null }; }
+  function checks() {
+    var d = ED.d, c = [['At least one photo', ED.photos.length > 0], ['Stock number', !!d.stock.trim()], ['Make and model', !!(d.make.trim() && d.model.trim())], ['Year', +d.year >= 1950 && +d.year <= 2100], ['Asking price (cash)', +d.price > 0], ['Body type', !!d.body]];
+    if (d.rto) { c.push(['Rent to own deposit', +d.dep > 0]); c.push(['Rent to own monthly amount (48 or 54 months)', +d.m48 > 0 || +d.m54 > 0]); }
+    return c;
+  }
+  function viewEditor() {
+    var d = ED.d;
+    $('admin-body').innerHTML = '<button class="linkback" type="button" data-admin="cars">← Back to cars</button>' + head(ED.orig ? 'Edit ' + esc(ED.orig) : 'Upload a car') +
+      '<div class="editor"><form id="ed" novalidate autocomplete="off">' +
+      '<div class="panel"><h3>Photos</h3><div class="drop" id="drop" tabindex="0" role="button" aria-label="Add photos"><b>Tap to add photos</b><div class="muted small">or drag them here · the first photo is the cover</div><input id="file" type="file" accept="image/*" multiple hidden></div><div class="photos" id="photos"></div></div>' +
+      '<div class="panel"><h3>Car details</h3><div class="form-grid">' +
+      fld('Stock number', 'd-stock', '<input id="d-stock" data-k="stock" type="text" value="' + esc(d.stock) + '" maxlength="40">') + fld('Cash price (R)', 'd-price', '<input id="d-price" data-k="price" type="number" min="0" inputmode="numeric" value="' + esc(d.price) + '">') +
+      fld('Make', 'd-make', '<input id="d-make" data-k="make" type="text" value="' + esc(d.make) + '" maxlength="60">') + fld('Model', 'd-model', '<input id="d-model" data-k="model" type="text" value="' + esc(d.model) + '" maxlength="80">') +
+      fld('Year', 'd-year', '<input id="d-year" data-k="year" type="number" min="1950" max="2100" inputmode="numeric" value="' + esc(d.year) + '">') + fld('Mileage (km), leave empty if unknown', 'd-km', '<input id="d-km" data-k="km" type="number" min="0" inputmode="numeric" value="' + esc(d.km) + '">') + '</div>' +
+      '<label class="small"><b>Body type</b></label><div class="seg" role="radiogroup" aria-label="Body type">' + BODY_TYPES.map(function (t) { return '<button type="button" role="radio" data-edbody="' + esc(t) + '" aria-checked="' + (d.body === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
+      '<label class="small"><b>Does it run? (only pick what you know)</b></label><div class="seg" role="radiogroup" aria-label="Condition">' + Object.keys(CONDITIONS).map(function (k) { return '<button type="button" role="radio" data-edcond="' + k + '" aria-checked="' + (d.cond === k) + '">' + CONDITIONS[k].label + '</button>'; }).join('') + '</div></div>' +
+      '<div class="panel"><h3>How can customers buy it?</h3><div class="seg" role="radiogroup" aria-label="Payment options"><button type="button" role="radio" data-edrto="off" aria-checked="' + (!d.rto) + '">Cash only</button><button type="button" role="radio" data-edrto="on" aria-checked="' + d.rto + '">Cash or rent to own</button></div>' +
+      '<div id="rto-fields" class="hidden-box"' + (d.rto ? '' : ' hidden') + '><p class="muted small">The deposit starts at 30% of the cash price. You can change it for this car. Fill in the monthly amount for each period you offer, and leave the other empty.</p><div class="form-grid three">' +
+      fld('Deposit (R)', 'd-dep', '<input id="d-dep" data-k="dep" type="number" min="0" inputmode="numeric" value="' + esc(d.dep) + '">') + fld('Monthly, 48 months (R)', 'd-m48', '<input id="d-m48" data-k="m48" type="number" min="0" inputmode="numeric" value="' + esc(d.m48) + '">') + fld('Monthly, 54 months (R)', 'd-m54', '<input id="d-m54" data-k="m54" type="number" min="0" inputmode="numeric" value="' + esc(d.m54) + '">') + '</div></div></div>' +
+      '<div class="panel"><h3>Description and problems</h3><p class="muted small">Write what the customer should know: what is wrong with the car, what has been fixed, anything missing.</p><textarea id="d-desc" data-k="desc" maxlength="2000" style="min-height:130px">' + esc(d.desc) + '</textarea></div></form>' +
+      '<aside><div class="panel"><h3>Before it can show on the site</h3><ul class="check" id="checklist"></ul><div id="ed-msg"></div>' +
+      '<div style="display:grid;gap:8px;margin-top:12px"><button class="btn" type="button" data-save="publish" id="b-pub">Save and show on site</button><button class="btn btn-outline" type="button" data-save="hidden">Save without showing</button></div></div>' +
+      '<div class="panel"><h3>How it will look</h3><div id="preview"></div></div></aside></div>';
+    drawPhotos(); drawLive();
+  }
+  function drawPhotos() { $('photos').innerHTML = ED.photos.map(function (p, i) { return '<div class="photo"><img src="' + esc(p.url) + '" alt="Photo ' + (i + 1) + '">' + (i === 0 ? '<span class="cover tag tag-ok">Cover</span>' : '') + '<div class="ctl"><button type="button" data-pmove="' + i + '" data-dir="-1" aria-label="Move earlier">◀</button><button type="button" data-pdel="' + i + '" aria-label="Remove photo">Remove</button><button type="button" data-pmove="' + i + '" data-dir="1" aria-label="Move later">▶</button></div></div>'; }).join(''); }
+  function drawLive() {
+    var c = checks(), v = edCar();
+    $('checklist').innerHTML = c.map(function (x) { return '<li><span class="tick ' + (x[1] ? 'ok' : 'no') + '">' + (x[1] ? '✓' : '✕') + '</span>' + x[0] + '</li>'; }).join('');
+    $('b-pub').disabled = !c.every(function (x) { return x[1]; });
+    $('preview').innerHTML = cardHtml({ stock: v.stock || 'Stock no.', make: v.make || 'Make', model: v.model || 'Model', body: v.body || 'Body type', year: v.year || 'Year', price: v.price, cond: v.cond, km: v.km, photos: v.photos.length ? v.photos : [{ url: '' }], rto: v.rto }, true);
+  }
+  function saveEditor(mode) {
+    var v = edCar(), msg = $('ed-msg');
+    function err(t) { msg.innerHTML = '<div class="notice notice-error" style="margin-top:10px">' + esc(t) + '</div>'; }
+    if (!v.stock) return err('Enter a stock number.');
+    if (CARS.some(function (x) { return x.stock.toLowerCase() === v.stock.toLowerCase() && x.stock !== ED.orig; })) return err('That stock number is already used. Every stock number must be different.');
+    if (!v.make || !v.model) return err('Enter the make and model.');
+    if (mode === 'publish' && !checks().every(function (x) { return x[1]; })) return err('Finish the checklist first.');
+    if (ED.d.rto && !(v.rto.deposit > 0 && (v.rto.m48 || v.rto.m54))) return err('Rent to own needs a deposit and at least one monthly amount, or choose Cash only.');
+    if (!(v.year >= 1950 && v.year <= 2100)) return err('Enter a valid year.');
+    if (!v.body) return err('Choose a body type.');
+    var btns = document.querySelectorAll('[data-save]'); btns.forEach(function (b) { b.disabled = true; });
+    msg.innerHTML = '<div class="notice" style="margin-top:10px">Saving… please wait.</div>';
+    var row = { stock_number: v.stock, make: v.make, model: v.model, year: v.year, mileage: v.km, price: v.price, body_type: v.body, condition: v.cond, description: v.desc, rto_enabled: !!v.rto, rto_deposit: v.rto ? v.rto.deposit : null, rto_m48: v.rto ? v.rto.m48 : null, rto_m54: v.rto ? v.rto.m54 : null };
+    var chain = Promise.resolve();
+    chain = chain.then(function () {
+      if (ED.id) return sb.from('vehicles').update(row).eq('id', ED.id).then(function (r) { if (r.error) throw r.error; });
+      return sb.from('vehicles').insert(row).select('id').single().then(function (r) { if (r.error) throw r.error; ED.id = r.data.id; ED.orig = v.stock; });
+    });
+    chain = chain.then(function () {
+      if (!ED.removed.length) return;
+      return sb.storage.from('vehicle-images').remove(ED.removed.map(function (p) { return p.path; })).then(function () {
+        return sb.from('vehicle_images').delete().in('id', ED.removed.map(function (p) { return p.id; }));
+      }).then(function (r) { if (r.error) throw r.error; ED.removed = []; });
+    });
+    ED.photos.forEach(function (p, i) {
+      chain = chain.then(function () {
+        if (p.file) {
+          var path = ED.id + '/' + Date.now() + '-' + i + '.jpg';
+          return sb.storage.from('vehicle-images').upload(path, p.file, { contentType: 'image/jpeg', cacheControl: '31536000' }).then(function (u) {
+            if (u.error) throw u.error;
+            return sb.from('vehicle_images').insert({ vehicle_id: ED.id, path: path, position: i }).select('id').single();
+          }).then(function (r) { if (r.error) throw r.error; p.id = r.data.id; p.path = path; p.file = null; p.url = pubUrl(path); });
+        }
+        return sb.from('vehicle_images').update({ position: i }).eq('id', p.id).then(function (r) { if (r.error) throw r.error; });
+      });
+    });
+    chain = chain.then(function () {
+      if (mode !== 'publish') return;
+      return sb.from('vehicles').update({ status: 'published' }).eq('id', ED.id).then(function (r) { if (r.error) throw r.error; });
+    });
+    chain.then(function () { return loadCars(); }).then(function () {
+      renderPublic(); toast(mode === 'publish' ? 'Saved. The car is now showing on the site.' : 'Saved. The car is not showing on the site.');
+      A.tab = 'cars'; renderAdmin(); window.scrollTo(0, 0);
+    }).catch(function (e) {
+      btns.forEach(function (b) { b.disabled = false; });
+      err(e && e.code === '23505' ? 'That stock number is already used. Every stock number must be different.' : 'Could not save: ' + ((e && e.message) || 'unknown error') + '. Your changes are still on this page, so you can try again.');
+    });
+  }
+  function shrink(file) {
+    return new Promise(function (res, rej) {
+      var img = new Image(), u = URL.createObjectURL(file);
+      img.onload = function () {
+        var s = Math.min(1, 1600 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        c.toBlob(function (b) { b ? res(b) : rej(); }, 'image/jpeg', 0.85);
+      };
+      img.onerror = function () { URL.revokeObjectURL(u); rej(); };
+      img.src = u;
+    });
+  }
+  function addFiles(files) {
+    var list = Array.prototype.slice.call(files).filter(function (f) { return /^image\//.test(f.type); }).slice(0, 12 - ED.photos.length), failed = 0, ed = ED;
+    Promise.all(list.map(function (f) { return shrink(f).then(function (b) { ed.photos.push({ file: b, url: URL.createObjectURL(b) }); }, function () { failed++; }); })).then(function () {
+      if (ED !== ed) return; drawPhotos(); drawLive(); if (failed) toast(failed + ' photo(s) could not be read. Try JPG or PNG.');
+    });
+  }
+  function openDoc(path) {
+    var w = window.open('', '_blank');
+    sb.storage.from('application-documents').createSignedUrl(path, 120).then(function (r) {
+      if (r.error || !r.data) { if (w) w.close(); toast('Could not open the document.'); return; }
+      if (w) w.location = r.data.signedUrl; else window.location = r.data.signedUrl;
+    });
+  }
+
+  /* ---------- Events ---------- */
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-go],[data-open],[data-enquire],[data-apply],[data-rto-filter],[data-photo],[data-admin],[data-signout],[data-new-car],[data-edit],[data-cstatus],[data-edbody],[data-edcond],[data-edrto],[data-save],[data-pmove],[data-pdel],[data-lead],[data-app],[data-lstatus],[data-astatus],[data-setlead],[data-setapp],[data-addnote],[data-docpath],[data-close-overlay-btn],[data-close-overlay],#drop');
+    if (!t) return;
+    var d = t.dataset;
+    if (d.closeOverlay !== undefined && e.target !== t) return;
+    if (d.closeOverlay !== undefined || d.closeOverlayBtn !== undefined) { $('overlay-root').innerHTML = ''; return; }
+    if (t.id === 'drop') { $('file').click(); return; }
+    if (d.photo !== undefined) { $('main-photo').src = photosOf(find(d.stock))[+d.photo]; t.parentNode.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-current', b === t ? 'true' : 'false'); }); return; }
+    if (d.open) return openCar(d.open);
+    if (d.enquire) return openEnquiry(d.enquire);
+    if (d.apply !== undefined) return openApply(d.apply);
+    if (d.rtoFilter !== undefined) { F.pay = 'rto'; $('f-pay').value = 'rto'; renderPublic(); show('home', 'stock'); return; }
+    if (!adminIn && (d.admin || d.newCar !== undefined || d.edit || d.cstatus || d.save || d.lead || d.app || d.docpath || d.setlead || d.setapp || d.addnote)) return;
+    if (d.admin) { A.tab = d.admin; renderAdmin(); show('admin'); return; }
+    if (d.signout !== undefined) { adminIn = false; ED = null; LEADS = []; APPS = []; $('overlay-root').innerHTML = ''; (sb ? sb.auth.signOut() : Promise.resolve()).then(function () { history.replaceState(null, '', location.pathname + location.search); show('home'); return loadCars(); }).then(renderPublic); return; }
+    if (d.newCar !== undefined) return openEditor(null);
+    if (d.edit) return openEditor(d.edit);
+    if (d.cstatus) {
+      var c = find(d.stock), st = d.cstatus;
+      sb.from('vehicles').update({ status: st }).eq('id', c.id).then(function (r) {
+        if (r.error) { toast(/photo|price/i.test(r.error.message) ? 'Add a photo and a price before showing this car on the site.' : 'Could not update: ' + r.error.message); return; }
+        c.status = st; toast(c.stock + (st === 'published' ? ' is now showing on the site' : st === 'sold' ? ' marked as sold' : ' is now hidden')); renderPublic(); renderAdmin();
+      });
+      return;
+    }
+    if (d.edbody !== undefined) { ED.d.body = d.edbody; t.parentNode.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-checked', b === t); }); drawLive(); return; }
+    if (d.edcond) { ED.d.cond = d.edcond; t.parentNode.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-checked', b === t); }); drawLive(); return; }
+    if (d.edrto) { ED.d.rto = d.edrto === 'on'; if (ED.d.rto && !ED.d.depEdited && +ED.d.price > 0) { ED.d.dep = depositFor(ED.d.price); $('d-dep').value = ED.d.dep; } t.parentNode.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-checked', b === t); }); $('rto-fields').hidden = !ED.d.rto; drawLive(); return; }
+    if (d.save) return saveEditor(d.save);
+    if (d.pdel !== undefined) { var gone = ED.photos.splice(+d.pdel, 1)[0]; if (gone && gone.id) ED.removed.push(gone); drawPhotos(); drawLive(); return; }
+    if (d.pmove !== undefined) { var i = +d.pmove, j = i + +d.dir; if (j >= 0 && j < ED.photos.length) { var tmp = ED.photos[i]; ED.photos[i] = ED.photos[j]; ED.photos[j] = tmp; drawPhotos(); drawLive(); } return; }
+    if (d.lead) return openLead(d.lead);
+    if (d.app) return openApp(d.app);
+    if (d.docpath) return openDoc(d.docpath);
+    if (d.lstatus !== undefined) { A.lstatus = d.lstatus; drawLeads(); return; }
+    if (d.astatus !== undefined) { A.astatus = d.astatus; drawApps(); return; }
+    if (d.setlead) { var L = LEADS.filter(function (x) { return x.id === d.setlead; })[0]; sb.from('leads').update({ status: d.status }).eq('id', L.id).then(function (r) { if (r.error) return toast('Could not update the status.'); L.status = d.status; openLead(L.id); if ($('lead-list')) drawLeads(); }); return; }
+    if (d.setapp) { var P = APPS.filter(function (x) { return x.id === d.setapp; })[0]; sb.from('applications').update({ status: d.status }).eq('id', P.id).then(function (r) { if (r.error) return toast('Could not update the status.'); P.status = d.status; openApp(P.id); if ($('app-list')) drawApps(); }); return; }
+    if (d.addnote) {
+      var txt = $('note-text').value.trim(); if (!txt) return;
+      var N = LEADS.filter(function (x) { return x.id === d.addnote; })[0], notes = N.notes.concat([{ at: new Date().toISOString(), text: txt }]);
+      sb.from('leads').update({ notes: notes }).eq('id', N.id).then(function (r) { if (r.error) return toast('Could not save the note.'); N.notes = notes; openLead(N.id); });
+      return;
+    }
+    var g = d.go;
+    if (g === 'home') show('home'); else if (g === 'browse') show('home', 'stock'); else if (g === 'about') show('about'); else if (g === 'contact') show('contact');
+  });
+  document.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el.id === 'l-q') { A.lq = el.value; drawLeads(); return; }
+    if (el.dataset && el.dataset.k && ED) {
+      var k = el.dataset.k; ED.d[k] = el.value;
+      if (k === 'dep') ED.d.depEdited = true;
+      if (k === 'price' && ED.d.rto && !ED.d.depEdited) { ED.d.dep = depositFor(el.value); $('d-dep').value = ED.d.dep || ''; }
+      drawLive(); return;
+    }
+    if (el.id && el.id.indexOf('ap-x-') === 0) drawTotal();
+  });
+  document.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.id === 'file' && ED) { addFiles(el.files); el.value = ''; return; }
+    if (el.id === 'ap-stock') { drawTerms(); return; }
+    if (el.name === 'ap-emp') { drawDocs(); return; }
+    if (el.name === 'ap-married') { $('mdate-box').hidden = el.value !== 'yes'; return; }
+    if (el.name === 'ap-bond') { $('bond-box').hidden = el.value !== 'yes'; return; }
+    if (el.dataset && el.dataset.doc) {
+      var k = el.dataset.doc, all = Array.prototype.slice.call(el.files), ok = all.filter(function (f) { return DOC_TYPES.indexOf(f.type) >= 0 && f.size <= MAX_DOC; }), er = $('err-doc-' + k);
+      AP.files[k] = ok; $('fn-' + k).innerHTML = fileNames(k);
+      if (er) { er.hidden = ok.length === all.length; er.textContent = ok.length === all.length ? '' : 'Only PDF, JPG, PNG or WEBP files under 10 MB can be attached.'; }
+    }
+  });
+  document.addEventListener('submit', function (e) {
+    if (e.target.id === 'ap') { e.preventDefault(); submitApply(e.target); }
+    if (e.target.id === 'login') {
+      e.preventDefault();
+      var em = $('lg-email').value.trim(), pw = $('lg-pass').value, er = $('lg-err');
+      if (!em || !pw) { er.textContent = 'Enter your email and password.'; er.hidden = false; return; }
+      if (!sb) { er.textContent = 'The site is not connected to its database yet.'; er.hidden = false; return; }
+      setBusy(e.target, true);
+      sb.auth.signInWithPassword({ email: em, password: pw }).then(function (r) {
+        if (r.error) { er.textContent = 'Incorrect email or password.'; er.hidden = false; setBusy(e.target, false); return; }
+        return checkAdmin().then(function (ok) {
+          if (!ok) { er.textContent = 'This account does not have access.'; er.hidden = false; setBusy(e.target, false); return sb.auth.signOut(); }
+          er.hidden = true; $('login').reset(); setBusy(e.target, false); A.tab = 'leads'; return enterAdmin();
+        });
+      });
+    }
+  });
+  document.addEventListener('dragover', function (e) { var z = e.target.closest && e.target.closest('#drop'); if (z) { e.preventDefault(); z.classList.add('over'); } });
+  document.addEventListener('dragleave', function (e) { var z = e.target.closest && e.target.closest('#drop'); if (z) z.classList.remove('over'); });
+  document.addEventListener('drop', function (e) { var z = e.target.closest && e.target.closest('#drop'); if (z && ED) { e.preventDefault(); z.classList.remove('over'); addFiles(e.dataTransfer.files); } });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') $('overlay-root').innerHTML = '';
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.id === 'drop') { e.preventDefault(); $('file').click(); }
+    if (e.key === 'Enter' && adminIn && e.target.matches) { if (e.target.matches('tr[data-lead]')) openLead(e.target.dataset.lead); if (e.target.matches('tr[data-app]')) openApp(e.target.dataset.app); }
+  });
+  window.addEventListener('hashchange', route);
+  renderPublic(); route(); loadCars().then(renderPublic);
+})();
+</script>
+</body>
+</html>

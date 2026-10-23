@@ -287,7 +287,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       <h2>Two ways to buy</h2>
       <div class="pay-grid">
         <div class="panel"><h3>Cash</h3><p>Pay the asking price in cash. Every vehicle shows its price, its stock number and an honest description of its condition.</p><button class="btn btn-outline" type="button" data-go="browse">Browse vehicles</button></div>
-        <div class="panel"><h3>Rent to Own</h3><p>For customers who are blacklisted or cannot get bank finance. Pay a 30% deposit, then monthly payments over 48 or 54 months. Tracker insurance is included in the monthly installment. Available on selected vehicles, with the deposit and an estimated monthly installment shown on each one.</p><div class="row"><button class="btn" type="button" data-rto-filter>See rent to own vehicles</button><button class="btn btn-outline" type="button" data-apply="">Apply</button></div></div>
+        <div class="panel"><h3>Rent to Own</h3><p>For customers who are blacklisted or cannot get bank finance. Pay a 30% deposit, then monthly payments over 48 or 54 months. Tracker, Insurance, and Roadside Assistance are included in the monthly installment. Available on selected vehicles, with the deposit and an estimated monthly installment shown on each one.</p><div class="row"><button class="btn" type="button" data-rto-filter>See rent to own vehicles</button><button class="btn btn-outline" type="button" data-apply="">Apply</button></div></div>
       </div>
     </div></div>
   </section>
@@ -305,7 +305,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
           <div>
             <h3 style="margin-bottom:2px">Sam Mosala</h3>
             <p class="muted">Sales Manager, Bank Repo Cars</p>
-            <p>Hi, I am Sam Mosala. I am here to help you buy your car.</p>
+            <p>Hi, I am Sam Mosala, the Sales Manager at Bank Repo Cars. I am here to help you buy your car.</p><p>I will take you through the whole process, from choosing the right vehicle to driving it away. I will explain how cash and rent to own work, help you with your application and the documents you need, and answer any questions you have along the way.</p><p>I will make sure you get the best price I can offer. Send an enquiry on any vehicle you like, and I will get back to you.</p>
           </div>
         </div>
       </div>
@@ -325,7 +325,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       <div class="panel">
         <h2>Cash or rent to own</h2>
         <p><b>Cash.</b> You pay the full asking price shown on the vehicle.</p>
-        <p><b>Rent to own.</b> Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle's price, then pay monthly over 48 or 54 months. Rent to own is only available on selected vehicles. Each of those vehicles shows its deposit and an estimated monthly installment.</p><p><b>Tracker insurance is included</b> in the monthly installment. The monthly amounts shown on the website are <b>estimates</b>, shown as a range, and our sales team will confirm your exact installment.</p>
+        <p><b>Rent to own.</b> Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle's price, then pay monthly over 48 or 54 months. Rent to own is only available on selected vehicles. Each of those vehicles shows its deposit and an estimated monthly installment.</p><p><b>Tracker, Insurance, and Roadside Assistance are included</b> in the monthly installment. The monthly amounts shown on the website are <b>estimates</b>, shown as a range, and our sales team will confirm your exact installment.</p>
         <p><b>Documents for a rent to own application</b></p>
         <ul class="steps">
           <li><b>If you are employed:</b> 3 months bank statements, 3 months payslips, driver's license, and ID or passport.</li>
@@ -407,7 +407,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   var RTO_RANGE = 0.05;   // the estimated monthly installment is shown as a range of plus or minus 5%
   var round50 = function (n) { return Math.round(n / 50) * 50; };
   var rangeTxt = function (m) { return money(round50(m * (1 - RTO_RANGE))) + ' – ' + money(round50(m * (1 + RTO_RANGE))); };
-  var RTO_NOTE = 'Tracker insurance is included in the monthly installment. The monthly amounts shown are estimates, so our sales team will confirm your exact installment.';
+  var RTO_NOTE = 'Tracker, Insurance, and Roadside Assistance are included in the monthly installment. The monthly amounts shown are estimates, so our sales team will confirm your exact installment.';
 
   var configured = !/PASTE/.test(CFG.SUPABASE_URL + CFG.SUPABASE_ANON_KEY) && !!window.supabase;
   var sb = configured ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
@@ -607,7 +607,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     var cars = live().filter(hasRto), sel = stock && find(stock) && hasRto(find(stock)) ? stock : '';
     var yn = function (name) { return '<div class="row"><label class="checkbox" style="font-weight:400"><input type="radio" name="' + name + '" value="yes"><span>Yes</span></label><label class="checkbox" style="font-weight:400"><input type="radio" name="' + name + '" value="no"><span>No</span></label></div><div class="field-error" id="err-' + name + '" hidden></div>'; };
     var money_in = function (id, label) { return fld(label, id, '<input id="' + id + '" type="number" min="0" inputmode="numeric">'); };
-    $('apply-body').innerHTML = '<h1>Rent to own application</h1><p class="lead-in">Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle\'s price, then pay monthly over 48 or 54 months. Tracker insurance is included in the monthly installment, and the monthly amounts shown are estimates.</p>' +
+    $('apply-body').innerHTML = '<h1>Rent to own application</h1><p class="lead-in">Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle\'s price, then pay monthly over 48 or 54 months. Tracker, Insurance, and Roadside Assistance are included in the monthly installment, and the monthly amounts shown are estimates.</p>' +
       '<form id="ap" novalidate>' + HP +
       '<div class="panel"><h2 class="sub" style="margin-top:0">1. The vehicle</h2>' +
       fld('Choose a rent to own vehicle', 'ap-stock', '<select id="ap-stock"><option value="">Choose a vehicle…</option>' + cars.map(function (v) { return '<option value="' + esc(v.stock) + '"' + (v.stock === sel ? ' selected' : '') + '>' + esc(title(v) + ' · ' + money(v.price) + ' · ' + v.stock) + '</option>'; }).join('') + '</select>') +

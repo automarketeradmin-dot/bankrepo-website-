@@ -242,6 +242,8 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
 @media (min-width: 900px) { .filters { grid-template-columns: repeat(7, minmax(0, 1fr)); } .filters .wide { grid-column: span 2; } .filter-actions { grid-column: span 1; } }
 
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+.dealership-photo{border-bottom:4px solid var(--red);background:#e9ecef}.dealership-photo img{display:block;width:100%;height:auto;max-height:600px;object-fit:cover;object-position:center top}
 </style>
 </head>
 <body>
@@ -260,6 +262,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
 
 <main>
   <section id="view-home">
+    <div class="dealership-photo"><img src="dealership.jpg" alt="Bank Repo Cars dealership, 45 Krause Street, Bloemfontein" onerror="this.parentNode.hidden=true"></div>
     <div class="hero"><div class="wrap">
       <h1>Find a Vehicle That Fits Your Budget.</h1>
       <p>Browse our available stock, review vehicle details and enquire directly with our sales team. Pay cash, or rent to own on selected vehicles.</p>
@@ -271,7 +274,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       <form class="filters" id="filters" onsubmit="return false">
         <div class="wide"><label for="f-q">Search make, model or stock number</label><input id="f-q" type="text"></div>
         <div><label for="f-body">Body type</label><select id="f-body"><option value="">All body types</option></select></div>
-        <div><label for="f-pay">Payment</label><select id="f-pay"><option value="">Cash or rent to own</option><option value="rto">Rent to own available</option></select></div>
+        <div><label for="f-pay">Payment options</label><select id="f-pay"><option value="">All vehicles</option><option value="cash">Cash only</option><option value="rto">Cash and rent to own</option></select></div>
         <div><label for="f-min">Min price (R)</label><input id="f-min" type="number" min="0" inputmode="numeric"></div>
         <div><label for="f-max">Max price (R)</label><input id="f-max" type="number" min="0" inputmode="numeric"></div>
         <div class="filter-actions"><button class="btn btn-outline" type="button" id="f-clear">Clear</button></div>
@@ -284,7 +287,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       <h2>Two ways to buy</h2>
       <div class="pay-grid">
         <div class="panel"><h3>Cash</h3><p>Pay the asking price in cash. Every vehicle shows its price, its stock number and an honest description of its condition.</p><button class="btn btn-outline" type="button" data-go="browse">Browse vehicles</button></div>
-        <div class="panel"><h3>Rent to Own</h3><p>For customers who are blacklisted or cannot get bank finance. Pay a 30% deposit, then monthly payments over 48 or 54 months. Available on selected vehicles, with the deposit and monthly amount shown on each one.</p><div class="row"><button class="btn" type="button" data-rto-filter>See rent to own vehicles</button><button class="btn btn-outline" type="button" data-apply="">Apply</button></div></div>
+        <div class="panel"><h3>Rent to Own</h3><p>For customers who are blacklisted or cannot get bank finance. Pay a 30% deposit, then monthly payments over 48 or 54 months. Tracker insurance is included in the monthly installment. Available on selected vehicles, with the deposit and an estimated monthly installment shown on each one.</p><div class="row"><button class="btn" type="button" data-rto-filter>See rent to own vehicles</button><button class="btn btn-outline" type="button" data-apply="">Apply</button></div></div>
       </div>
     </div></div>
   </section>
@@ -322,7 +325,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       <div class="panel">
         <h2>Cash or rent to own</h2>
         <p><b>Cash.</b> You pay the full asking price shown on the vehicle.</p>
-        <p><b>Rent to own.</b> Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle's price, then pay monthly over 48 or 54 months. Rent to own is only available on selected vehicles. Each of those vehicles shows its deposit and its monthly amount.</p>
+        <p><b>Rent to own.</b> Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle's price, then pay monthly over 48 or 54 months. Rent to own is only available on selected vehicles. Each of those vehicles shows its deposit and an estimated monthly installment.</p><p><b>Tracker insurance is included</b> in the monthly installment. The monthly amounts shown on the website are <b>estimates</b>, shown as a range, and our sales team will confirm your exact installment.</p>
         <p><b>Documents for a rent to own application</b></p>
         <ul class="steps">
           <li><b>If you are employed:</b> 3 months bank statements, 3 months payslips, driver's license, and ID or passport.</li>
@@ -401,6 +404,10 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   var dt = function (d) { return new Date(d).toLocaleString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
   var ago = function (t) { var m = Math.max(1, Math.round((Date.now() - t) / 60000)); if (m < 60) return m + ' min ago'; var h = Math.round(m / 60); if (h < 24) return h + ' h ago'; return Math.round(h / 24) + ' d ago'; };
   var depositFor = function (price) { return Math.round((+price || 0) * 0.3); };
+  var RTO_RANGE = 0.05;   // the estimated monthly installment is shown as a range of plus or minus 5%
+  var round50 = function (n) { return Math.round(n / 50) * 50; };
+  var rangeTxt = function (m) { return money(round50(m * (1 - RTO_RANGE))) + ' – ' + money(round50(m * (1 + RTO_RANGE))); };
+  var RTO_NOTE = 'Tracker insurance is included in the monthly installment. The monthly amounts shown are estimates, so our sales team will confirm your exact installment.';
 
   var configured = !/PASTE/.test(CFG.SUPABASE_URL + CFG.SUPABASE_ANON_KEY) && !!window.supabase;
   var sb = configured ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
@@ -516,6 +523,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       if (q && (v.make + ' ' + v.model + ' ' + v.stock).toLowerCase().indexOf(q) < 0) return false;
       if (F.body && v.body !== F.body) return false;
       if (F.pay === 'rto' && !hasRto(v)) return false;
+      if (F.pay === 'cash' && hasRto(v)) return false;
       if (!isNaN(min) && v.price < min) return false;
       if (!isNaN(max) && v.price > max) return false;
       return true;
@@ -534,7 +542,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   /* ---------- Public: vehicle page ---------- */
   function rtoBox(v) {
     if (!hasRto(v)) return '<div class="rto-box"><b>Cash only</b>This vehicle is sold for cash. Rent to own is not available on it.</div>';
-    return '<div class="rto-box"><b>Rent to own available</b><div class="rto-row"><span>Deposit</span><span>' + money(v.rto.deposit) + '</span></div>' + rtoTerms(v).map(function (t) { return '<div class="rto-row"><span>' + t[0] + ' months</span><span>' + money(t[1]) + ' per month</span></div>'; }).join('') + '</div>';
+    return '<div class="rto-box"><b>Rent to own available</b><div class="rto-row"><span>Deposit (30%)</span><span>' + money(v.rto.deposit) + '</span></div><p class="small muted" style="margin:8px 0 4px"><b style="display:inline">Estimated monthly installment</b></p>' + rtoTerms(v).map(function (t) { return '<div class="rto-row"><span>' + t[0] + ' months</span><span>' + rangeTxt(t[1]) + '</span></div>'; }).join('') + '<p class="small muted" style="margin:8px 0 0">' + RTO_NOTE + '</p></div>';
   }
   function openCar(stock) {
     var v = find(stock); if (!v) return;
@@ -599,7 +607,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     var cars = live().filter(hasRto), sel = stock && find(stock) && hasRto(find(stock)) ? stock : '';
     var yn = function (name) { return '<div class="row"><label class="checkbox" style="font-weight:400"><input type="radio" name="' + name + '" value="yes"><span>Yes</span></label><label class="checkbox" style="font-weight:400"><input type="radio" name="' + name + '" value="no"><span>No</span></label></div><div class="field-error" id="err-' + name + '" hidden></div>'; };
     var money_in = function (id, label) { return fld(label, id, '<input id="' + id + '" type="number" min="0" inputmode="numeric">'); };
-    $('apply-body').innerHTML = '<h1>Rent to own application</h1><p class="lead-in">Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle\'s price, then pay monthly over 48 or 54 months.</p>' +
+    $('apply-body').innerHTML = '<h1>Rent to own application</h1><p class="lead-in">Rent to own is for people who are blacklisted or who cannot get bank finance. You pay a deposit of 30% of the vehicle\'s price, then pay monthly over 48 or 54 months. Tracker insurance is included in the monthly installment, and the monthly amounts shown are estimates.</p>' +
       '<form id="ap" novalidate>' + HP +
       '<div class="panel"><h2 class="sub" style="margin-top:0">1. The vehicle</h2>' +
       fld('Choose a rent to own vehicle', 'ap-stock', '<select id="ap-stock"><option value="">Choose a vehicle…</option>' + cars.map(function (v) { return '<option value="' + esc(v.stock) + '"' + (v.stock === sel ? ' selected' : '') + '>' + esc(title(v) + ' · ' + money(v.price) + ' · ' + v.stock) + '</option>'; }).join('') + '</select>') +
@@ -628,7 +636,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     if (!v) { el.innerHTML = '<p class="muted">Choose a vehicle to see its deposit and monthly amount.</p>'; return; }
     var t = rtoTerms(v);
     el.innerHTML = '<div class="rto-box"><b>' + esc(title(v)) + '</b><div class="rto-row"><span>Cash price</span><span>' + money(v.price) + '</span></div><div class="rto-row"><span>Deposit for rent to own</span><span><b style="display:inline">' + money(v.rto.deposit) + '</b></span></div></div>' +
-      '<label>Choose your payment period</label><div class="opt-row">' + t.map(function (x) { return '<label class="opt"><input type="radio" name="ap-term" value="' + x[0] + '"' + (String(x[0]) === keep || t.length === 1 ? ' checked' : '') + '><span><b>' + x[0] + ' months</b><small>' + money(x[1]) + ' per month</small></span></label>'; }).join('') + '</div>';
+      '<p class="small muted" style="margin:0 0 10px">' + RTO_NOTE + '</p><label>Choose your payment period</label><div class="opt-row">' + t.map(function (x) { return '<label class="opt"><input type="radio" name="ap-term" value="' + x[0] + '"' + (String(x[0]) === keep || t.length === 1 ? ' checked' : '') + '><span><b>' + x[0] + ' months</b><small>' + rangeTxt(x[1]) + ' per month (estimate)</small></span></label>'; }).join('') + '</div>';
   }
   function drawDocs() {
     var emp = radio('ap-emp') || 'employed', list = DOCS[emp];
@@ -755,7 +763,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     drawerShell('<div class="row" style="justify-content:space-between"><h2 style="margin:0">' + esc(f.first + ' ' + f.sur) + '</h2><button class="btn btn-outline btn-small" type="button" data-close-overlay-btn>Close</button></div>' +
       '<p class="muted small" style="margin-top:6px">Rent to own · received ' + dt(a.at) + ' · ' + esc(a.ref) + '</p><p><a class="btn btn-whatsapp btn-small" href="https://wa.me/' + String(f.phone).replace(/\D/g, '') + '" target="_blank" rel="noopener noreferrer">WhatsApp applicant</a></p>' +
       '<label class="small"><b>Status</b></label>' + seg('data-setapp="' + a.id + '" data-status', ASTATUS.map(function (s) { return [s, ALABEL[s]]; }), a.status) +
-      '<h3>Vehicle and plan</h3>' + specRows([['Vehicle', a.vtitle + ' (' + a.stock + ')'], ['Cash price', money(a.price)], ['Deposit', money(a.deposit)], ['Plan', a.term + ' months at ' + money(a.monthly) + ' per month']]) +
+      '<h3>Vehicle and plan</h3>' + specRows([['Vehicle', a.vtitle + ' (' + a.stock + ')'], ['Cash price', money(a.price)], ['Deposit', money(a.deposit)], ['Plan', a.term + ' months, estimated ' + money(a.monthly) + ' per month (customer saw ' + rangeTxt(a.monthly) + ')']]) +
       '<h3>About the applicant</h3>' + specRows([['Phone', f.phone], ['Email', f.email], ['Married', f.married === 'yes' ? 'Yes, married ' + f.mdate : 'No'], ['Home address', f.home]]) +
       '<h3>Next of kin</h3>' + specRows([['Name', f.nok], ['Address', f.nokAddr], ['Contact', f.nokContact]]) +
       '<h3>Work</h3>' + specRows([['Company', f.co], ['Period employed', f.period], ['Company address', f.coAddr], ['Company contact', f.coContact], ['Employment type', a.emp === 'self' ? 'Self-employed or business owner' : 'Employed']]) +
@@ -784,7 +792,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   }
   function edCar() { var d = ED.d; return { stock: d.stock.trim(), make: d.make.trim(), model: d.model.trim(), year: +d.year, km: d.km === '' ? null : +d.km, price: +d.price || 0, body: d.body, cond: d.cond, desc: d.desc, photos: ED.photos.slice(), rto: d.rto ? { deposit: +d.dep || 0, m48: +d.m48 > 0 ? +d.m48 : null, m54: +d.m54 > 0 ? +d.m54 : null } : null }; }
   function checks() {
-    var d = ED.d, c = [['At least one photo', ED.photos.length > 0], ['Stock number', !!d.stock.trim()], ['Make and model', !!(d.make.trim() && d.model.trim())], ['Year', +d.year >= 1950 && +d.year <= 2100], ['Asking price (cash)', +d.price > 0], ['Body type', !!d.body]];
+    var d = ED.d, c = [['At least 5 photos (' + ED.photos.length + ' added, up to 15)', ED.photos.length >= 5], ['Stock number', !!d.stock.trim()], ['Make and model', !!(d.make.trim() && d.model.trim())], ['Year', +d.year >= 1950 && +d.year <= 2100], ['Asking price (cash)', +d.price > 0], ['Body type', !!d.body]];
     if (d.rto) { c.push(['Rent to own deposit', +d.dep > 0]); c.push(['Rent to own monthly amount (48 or 54 months)', +d.m48 > 0 || +d.m54 > 0]); }
     return c;
   }
@@ -792,14 +800,14 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     var d = ED.d;
     $('admin-body').innerHTML = '<button class="linkback" type="button" data-admin="cars">← Back to cars</button>' + head(ED.orig ? 'Edit ' + esc(ED.orig) : 'Upload a car') +
       '<div class="editor"><form id="ed" novalidate autocomplete="off">' +
-      '<div class="panel"><h3>Photos</h3><div class="drop" id="drop" tabindex="0" role="button" aria-label="Add photos"><b>Tap to add photos</b><div class="muted small">or drag them here · the first photo is the cover</div><input id="file" type="file" accept="image/*" multiple hidden></div><div class="photos" id="photos"></div></div>' +
+      '<div class="panel"><h3>Photos <span class="muted small">(minimum 5, maximum 15)</span></h3><div class="drop" id="drop" tabindex="0" role="button" aria-label="Add photos"><b>Tap to add photos</b><div class="muted small">or drag them here · the first photo is the cover</div><div class="small" id="photo-count" style="margin-top:6px;font-weight:700"></div><input id="file" type="file" accept="image/*" multiple hidden></div><div class="photos" id="photos"></div></div>' +
       '<div class="panel"><h3>Car details</h3><div class="form-grid">' +
       fld('Stock number', 'd-stock', '<input id="d-stock" data-k="stock" type="text" value="' + esc(d.stock) + '" maxlength="40">') + fld('Cash price (R)', 'd-price', '<input id="d-price" data-k="price" type="number" min="0" inputmode="numeric" value="' + esc(d.price) + '">') +
       fld('Make', 'd-make', '<input id="d-make" data-k="make" type="text" value="' + esc(d.make) + '" maxlength="60">') + fld('Model', 'd-model', '<input id="d-model" data-k="model" type="text" value="' + esc(d.model) + '" maxlength="80">') +
       fld('Year', 'd-year', '<input id="d-year" data-k="year" type="number" min="1950" max="2100" inputmode="numeric" value="' + esc(d.year) + '">') + fld('Mileage (km), leave empty if unknown', 'd-km', '<input id="d-km" data-k="km" type="number" min="0" inputmode="numeric" value="' + esc(d.km) + '">') + '</div>' +
       '<label class="small"><b>Body type</b></label><div class="seg" role="radiogroup" aria-label="Body type">' + BODY_TYPES.map(function (t) { return '<button type="button" role="radio" data-edbody="' + esc(t) + '" aria-checked="' + (d.body === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
       '<label class="small"><b>Does it run? (only pick what you know)</b></label><div class="seg" role="radiogroup" aria-label="Condition">' + Object.keys(CONDITIONS).map(function (k) { return '<button type="button" role="radio" data-edcond="' + k + '" aria-checked="' + (d.cond === k) + '">' + CONDITIONS[k].label + '</button>'; }).join('') + '</div></div>' +
-      '<div class="panel"><h3>How can customers buy it?</h3><div class="seg" role="radiogroup" aria-label="Payment options"><button type="button" role="radio" data-edrto="off" aria-checked="' + (!d.rto) + '">Cash only</button><button type="button" role="radio" data-edrto="on" aria-checked="' + d.rto + '">Cash or rent to own</button></div>' +
+      '<div class="panel"><h3>How can customers buy it?</h3><div class="seg" role="radiogroup" aria-label="Payment options"><button type="button" role="radio" data-edrto="off" aria-checked="' + (!d.rto) + '">Cash only</button><button type="button" role="radio" data-edrto="on" aria-checked="' + d.rto + '">Cash and rent to own</button></div>' +
       '<div id="rto-fields" class="hidden-box"' + (d.rto ? '' : ' hidden') + '><p class="muted small">The deposit starts at 30% of the cash price. You can change it for this car. Fill in the monthly amount for each period you offer, and leave the other empty.</p><div class="form-grid three">' +
       fld('Deposit (R)', 'd-dep', '<input id="d-dep" data-k="dep" type="number" min="0" inputmode="numeric" value="' + esc(d.dep) + '">') + fld('Monthly, 48 months (R)', 'd-m48', '<input id="d-m48" data-k="m48" type="number" min="0" inputmode="numeric" value="' + esc(d.m48) + '">') + fld('Monthly, 54 months (R)', 'd-m54', '<input id="d-m54" data-k="m54" type="number" min="0" inputmode="numeric" value="' + esc(d.m54) + '">') + '</div></div></div>' +
       '<div class="panel"><h3>Description and problems</h3><p class="muted small">Write what the customer should know: what is wrong with the car, what has been fixed, anything missing.</p><textarea id="d-desc" data-k="desc" maxlength="2000" style="min-height:130px">' + esc(d.desc) + '</textarea></div></form>' +
@@ -808,7 +816,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       '<div class="panel"><h3>How it will look</h3><div id="preview"></div></div></aside></div>';
     drawPhotos(); drawLive();
   }
-  function drawPhotos() { $('photos').innerHTML = ED.photos.map(function (p, i) { return '<div class="photo"><img src="' + esc(p.url) + '" alt="Photo ' + (i + 1) + '">' + (i === 0 ? '<span class="cover tag tag-ok">Cover</span>' : '') + '<div class="ctl"><button type="button" data-pmove="' + i + '" data-dir="-1" aria-label="Move earlier">◀</button><button type="button" data-pdel="' + i + '" aria-label="Remove photo">Remove</button><button type="button" data-pmove="' + i + '" data-dir="1" aria-label="Move later">▶</button></div></div>'; }).join(''); }
+  function drawPhotos() { if ($('photo-count')) $('photo-count').textContent = ED.photos.length + ' of 15 photos added' + (ED.photos.length < 5 ? ' (add at least ' + (5 - ED.photos.length) + ' more to show it on the site)' : ''); $('photos').innerHTML = ED.photos.map(function (p, i) { return '<div class="photo"><img src="' + esc(p.url) + '" alt="Photo ' + (i + 1) + '">' + (i === 0 ? '<span class="cover tag tag-ok">Cover</span>' : '') + '<div class="ctl"><button type="button" data-pmove="' + i + '" data-dir="-1" aria-label="Move earlier">◀</button><button type="button" data-pdel="' + i + '" aria-label="Remove photo">Remove</button><button type="button" data-pmove="' + i + '" data-dir="1" aria-label="Move later">▶</button></div></div>'; }).join(''); }
   function drawLive() {
     var c = checks(), v = edCar();
     $('checklist').innerHTML = c.map(function (x) { return '<li><span class="tick ' + (x[1] ? 'ok' : 'no') + '">' + (x[1] ? '✓' : '✕') + '</span>' + x[0] + '</li>'; }).join('');
@@ -877,7 +885,8 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     });
   }
   function addFiles(files) {
-    var list = Array.prototype.slice.call(files).filter(function (f) { return /^image\//.test(f.type); }).slice(0, 12 - ED.photos.length), failed = 0, ed = ED;
+    var over = ED.photos.length + Array.prototype.slice.call(files).filter(function (f) { return /^image\//.test(f.type); }).length > 15; if (over) toast('You can add up to 15 photos per car. Extra photos were skipped.');
+    var list = Array.prototype.slice.call(files).filter(function (f) { return /^image\//.test(f.type); }).slice(0, 15 - ED.photos.length), failed = 0, ed = ED;
     Promise.all(list.map(function (f) { return shrink(f).then(function (b) { ed.photos.push({ file: b, url: URL.createObjectURL(b) }); }, function () { failed++; }); })).then(function () {
       if (ED !== ed) return; drawPhotos(); drawLive(); if (failed) toast(failed + ' photo(s) could not be read. Try JPG or PNG.');
     });
@@ -910,8 +919,9 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     if (d.edit) return openEditor(d.edit);
     if (d.cstatus) {
       var c = find(d.stock), st = d.cstatus;
+      if (st === 'published' && c.photos.length < 5) { toast('This car has ' + c.photos.length + ' photos. Add at least 5 (Edit), then show it on the site.'); return; }
       sb.from('vehicles').update({ status: st }).eq('id', c.id).then(function (r) {
-        if (r.error) { toast(/photo|price/i.test(r.error.message) ? 'Add a photo and a price before showing this car on the site.' : 'Could not update: ' + r.error.message); return; }
+        if (r.error) { toast(/photo|price/i.test(r.error.message) ? 'A car needs a price and at least 5 photos before it can show on the site.' : 'Could not update: ' + r.error.message); return; }
         c.status = st; toast(c.stock + (st === 'published' ? ' is now showing on the site' : st === 'sold' ? ' marked as sold' : ' is now hidden')); renderPublic(); renderAdmin();
       });
       return;
@@ -993,4 +1003,3 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
 </script>
 </body>
 </html>
-

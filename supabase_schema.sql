@@ -58,6 +58,16 @@ create table if not exists public.vehicles (
 create unique index if not exists vehicles_stock_unique on public.vehicles (lower(stock_number));
 create index if not exists vehicles_status_idx on public.vehicles (status, created_at desc);
 
+-- Where the car is: at Bank Repo, or on the Executive Motor World floor (shown as "Premium").
+alter table public.vehicles add column if not exists location text not null default 'bank_repo';
+alter table public.vehicles drop constraint if exists vehicles_location_check;
+alter table public.vehicles add constraint vehicles_location_check check (location in ('bank_repo','executive'));
+
+-- A longer rent to own period always costs less per month.
+alter table public.vehicles drop constraint if exists rto_longer_cheaper;
+alter table public.vehicles add constraint rto_longer_cheaper
+  check (rto_m48 is null or rto_m54 is null or rto_m54 < rto_m48);
+
 create table if not exists public.vehicle_images (
   id         uuid primary key default gen_random_uuid(),
   vehicle_id uuid not null references public.vehicles(id) on delete cascade,
@@ -67,21 +77,37 @@ create table if not exists public.vehicle_images (
 );
 create index if not exists vehicle_images_vehicle_idx on public.vehicle_images (vehicle_id, position);
 
--- A car can only be published with a price and at least one photo.
+-- A car can only be published with a price and at least 5 photos (maximum 15).
 create or replace function public.check_publish()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql
+set search_path = public
+as $$
 begin
   new.updated_at := now();
   if new.status = 'published' then
     if new.price <= 0 then
       raise exception 'A published car needs a price.';
     end if;
-    if tg_op = 'INSERT' or not exists (select 1 from public.vehicle_images where vehicle_id = new.id) then
-      raise exception 'A published car needs at least one photo.';
+    if tg_op = 'INSERT' or (select count(*) from public.vehicle_images where vehicle_id = new.id) < 5 then
+      raise exception 'A published car needs at least 5 photos.';
     end if;
   end if;
   return new;
 end $$;
+
+create or replace function public.limit_photos()
+returns trigger language plpgsql
+set search_path = public
+as $$
+begin
+  if (select count(*) from public.vehicle_images where vehicle_id = new.vehicle_id) >= 15 then
+    raise exception 'A car can have at most 15 photos.';
+  end if;
+  return new;
+end $$;
+drop trigger if exists vehicle_images_limit on public.vehicle_images;
+create trigger vehicle_images_limit before insert on public.vehicle_images
+  for each row execute function public.limit_photos();
 drop trigger if exists vehicles_check_publish on public.vehicles;
 create trigger vehicles_check_publish before insert or update on public.vehicles
   for each row execute function public.check_publish();

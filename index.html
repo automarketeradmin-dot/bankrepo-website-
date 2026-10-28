@@ -244,6 +244,10 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 
 .dealership-photo{border-bottom:4px solid var(--red);background:#e9ecef}.dealership-photo img{display:block;width:100%;height:auto;max-height:600px;object-fit:cover;object-position:center top}
+
+.card-img{position:relative}
+.loc-badge{position:absolute;left:0;top:0;background:#1d2127;color:#fff;font-size:12px;font-weight:700;padding:5px 9px;letter-spacing:.2px;border-right:3px solid var(--red)}
+.loc-line{margin:0 0 12px;font-size:15px}.tag-dark{background:#1d2127;color:#fff;border-color:#1d2127}
 </style>
 </head>
 <body>
@@ -404,9 +408,15 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   var dt = function (d) { return new Date(d).toLocaleString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }); };
   var ago = function (t) { var m = Math.max(1, Math.round((Date.now() - t) / 60000)); if (m < 60) return m + ' min ago'; var h = Math.round(m / 60); if (h < 24) return h + ' h ago'; return Math.round(h / 24) + ' d ago'; };
   var depositFor = function (price) { return Math.round((+price || 0) * 0.3); };
-  var RTO_RANGE = 0.05;   // the estimated monthly installment is shown as a range of plus or minus 5%
+  var RTO_RANGE = 0.03;   // the estimated monthly installment is shown as a range of plus or minus 3%
   var round50 = function (n) { return Math.round(n / 50) * 50; };
   var rangeTxt = function (m) { return money(round50(m * (1 - RTO_RANGE))) + ' – ' + money(round50(m * (1 + RTO_RANGE))); };
+  // range for one period of a car; the 54-month range is never allowed to reach up into the 48-month range
+  var rangeFor = function (v, term) {
+    var m = term === 48 ? v.rto.m48 : v.rto.m54, lo = round50(m * (1 - RTO_RANGE)), hi = round50(m * (1 + RTO_RANGE));
+    if (term === 54 && v.rto.m48 > 0) { var lo48 = round50(v.rto.m48 * (1 - RTO_RANGE)); if (hi >= lo48) hi = lo48 - 50; if (lo > hi) lo = hi; }
+    return money(lo) + ' – ' + money(hi);
+  };
   var RTO_NOTE = 'Tracker, Insurance, and Roadside Assistance are included in the monthly installment. The monthly amounts shown are estimates, so our sales team will confirm your exact installment.';
 
   var configured = !/PASTE/.test(CFG.SUPABASE_URL + CFG.SUPABASE_ANON_KEY) && !!window.supabase;
@@ -433,7 +443,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   var CARS = [], LEADS = [], APPS = [], carsState = 'loading';
   function mapVehicle(r) {
     var imgs = (r.vehicle_images || []).slice().sort(function (a, b) { return a.position - b.position; });
-    return { id: r.id, stock: r.stock_number, make: r.make, model: r.model, body: r.body_type, year: r.year, price: +r.price, cond: r.condition, km: r.mileage, desc: r.description, status: r.status, created: new Date(r.created_at).getTime(),
+    return { id: r.id, loc: r.location || 'bank_repo', stock: r.stock_number, make: r.make, model: r.model, body: r.body_type, year: r.year, price: +r.price, cond: r.condition, km: r.mileage, desc: r.description, status: r.status, created: new Date(r.created_at).getTime(),
       photos: imgs.map(function (i) { return { id: i.id, path: i.path, url: pubUrl(i.path) }; }),
       rto: r.rto_enabled ? { deposit: +r.rto_deposit, m48: r.rto_m48 ? +r.rto_m48 : null, m54: r.rto_m54 ? +r.rto_m54 : null } : null };
   }
@@ -461,6 +471,14 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   var find = function (s) { return CARS.filter(function (v) { return v.stock === s; })[0]; };
   var title = function (v) { return v.year + ' ' + v.make + ' ' + v.model; };
   var rtoTerms = function (v) { var t = []; if (v.rto && v.rto.m48 > 0) t.push([48, v.rto.m48]); if (v.rto && v.rto.m54 > 0) t.push([54, v.rto.m54]); return t; };
+  var locName = function (l) { return l === 'executive' ? 'Executive Motor World' : 'Bank Repo'; };
+  var locBadge = function (v) { return v.loc === 'executive' ? '<span class="loc-badge">Premium · Executive Motor World</span>' : ''; };
+  var execLine = function (v) { return v.loc === 'executive' ? '<p class="loc-line"><span class="tag tag-dark">Premium</span> This vehicle is from the Executive Motor World floor.</p>' : ''; };
+  var carsShown = function () { return CARS.filter(function (v) { return !A.cloc || (A.cloc === 'executive') === (v.loc === 'executive'); }); };
+  var locSeg = function () {
+    var cnt = function (k) { return CARS.filter(function (v) { return !k || (k === 'executive') === (v.loc === 'executive'); }).length; };
+    return '<div class="seg" role="group" aria-label="Show cars at">' + [['', 'All cars'], ['bank_repo', 'At Bank Repo'], ['executive', 'At Executive Motor World']].map(function (x) { return '<button type="button" data-cloc="' + x[0] + '" aria-pressed="' + (A.cloc === x[0]) + '">' + x[1] + ' (' + cnt(x[0]) + ')</button>'; }).join('') + '</div>';
+  };
   var hasRto = function (v) { return !!v.rto && rtoTerms(v).length > 0 && v.rto.deposit > 0; };
   var photosOf = function (v) { return (v.photos || []).map(function (p) { return typeof p === 'string' ? p : p.url; }); };
 
@@ -504,7 +522,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     var media = ph ? '<img src="' + esc(ph) + '" alt="' + esc(title(v)) + '" loading="lazy">' : '<div class="nophoto">Photo will show here</div>';
     var open = preview ? '' : ' data-open="' + esc(v.stock) + '"';
     var rtoLine = hasRto(v) ? '<div class="meta"><span class="tag tag-rto">Rent to own</span> Deposit ' + money(v.rto.deposit) + '</div>' : '';
-    return '<article class="card"><button class="card-img" type="button"' + open + (preview ? ' tabindex="-1"' : '') + ' aria-label="View ' + esc(title(v)) + '">' + media + '</button>' +
+    return '<article class="card"><button class="card-img" type="button"' + open + (preview ? ' tabindex="-1"' : '') + ' aria-label="View ' + esc(title(v)) + '">' + media + locBadge(v) + '</button>' +
       '<div class="card-body"><h3 class="card-title"><button type="button"' + open + '>' + esc(v.make + ' ' + v.model) + '</button></h3>' +
       '<div class="meta">' + esc(v.year) + ' · ' + esc(v.body) + ' · Stock no. ' + esc(v.stock) + '</div>' +
       '<div class="price">' + (v.price ? money(v.price) : 'Price not set') + '</div>' + tag(v.cond) + rtoLine +
@@ -542,13 +560,13 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   /* ---------- Public: vehicle page ---------- */
   function rtoBox(v) {
     if (!hasRto(v)) return '<div class="rto-box"><b>Cash only</b>This vehicle is sold for cash. Rent to own is not available on it.</div>';
-    return '<div class="rto-box"><b>Rent to own available</b><div class="rto-row"><span>Deposit (30%)</span><span>' + money(v.rto.deposit) + '</span></div><p class="small muted" style="margin:8px 0 4px"><b style="display:inline">Estimated monthly installment</b></p>' + rtoTerms(v).map(function (t) { return '<div class="rto-row"><span>' + t[0] + ' months</span><span>' + rangeTxt(t[1]) + '</span></div>'; }).join('') + '<p class="small muted" style="margin:8px 0 0">' + RTO_NOTE + '</p></div>';
+    return '<div class="rto-box"><b>Rent to own available</b><div class="rto-row"><span>Deposit (30%)</span><span>' + money(v.rto.deposit) + '</span></div><p class="small muted" style="margin:8px 0 4px"><b style="display:inline">Estimated monthly installment</b></p>' + rtoTerms(v).map(function (t) { return '<div class="rto-row"><span>' + t[0] + ' months</span><span>' + rangeFor(v, t[0]) + '</span></div>'; }).join('') + '<p class="small muted" style="margin:8px 0 0">' + RTO_NOTE + '</p></div>';
   }
   function openCar(stock) {
     var v = find(stock); if (!v) return;
     var ph = photosOf(v), sold = v.status === 'sold';
     var specs = [['Make', v.make], ['Model', v.model], ['Year model', v.year], ['Body type', v.body], ['Mileage', v.km != null && v.km !== '' ? kmFmt(v.km) : null], ['Stock number', v.stock]].filter(function (r) { return r[1] !== null && r[1] !== ''; });
-    $('vehicle-body').innerHTML = '<button class="linkback" type="button" data-go="browse">← Back to all vehicles</button><h1>' + esc(title(v)) + '</h1>' +
+    $('vehicle-body').innerHTML = '<button class="linkback" type="button" data-go="browse">← Back to all vehicles</button><h1>' + esc(title(v)) + '</h1>' + execLine(v) +
       '<div class="vehicle-layout"><div><div class="gallery-main">' + (ph[0] ? '<img id="main-photo" src="' + esc(ph[0]) + '" alt="' + esc(title(v)) + '">' : '<div class="nophoto">No photo yet</div>') + '</div>' +
       (ph.length > 1 ? '<div class="thumbs">' + ph.map(function (p, n) { return '<button type="button" data-photo="' + n + '" data-stock="' + esc(v.stock) + '" aria-label="Show photo ' + (n + 1) + '"' + (n === 0 ? ' aria-current="true"' : '') + '><img src="' + esc(p) + '" alt="" loading="lazy"></button>'; }).join('') + '</div>' : '') + '</div>' +
       '<div><div class="panel"><div class="meta">Cash price</div><div class="price-lg">' + money(v.price) + '</div><p class="meta">Stock no. ' + esc(v.stock) + '</p>' + (sold ? '' : rtoBox(v)) +
@@ -636,7 +654,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     if (!v) { el.innerHTML = '<p class="muted">Choose a vehicle to see its deposit and monthly amount.</p>'; return; }
     var t = rtoTerms(v);
     el.innerHTML = '<div class="rto-box"><b>' + esc(title(v)) + '</b><div class="rto-row"><span>Cash price</span><span>' + money(v.price) + '</span></div><div class="rto-row"><span>Deposit for rent to own</span><span><b style="display:inline">' + money(v.rto.deposit) + '</b></span></div></div>' +
-      '<p class="small muted" style="margin:0 0 10px">' + RTO_NOTE + '</p><label>Choose your payment period</label><div class="opt-row">' + t.map(function (x) { return '<label class="opt"><input type="radio" name="ap-term" value="' + x[0] + '"' + (String(x[0]) === keep || t.length === 1 ? ' checked' : '') + '><span><b>' + x[0] + ' months</b><small>' + rangeTxt(x[1]) + ' per month (estimate)</small></span></label>'; }).join('') + '</div>';
+      '<p class="small muted" style="margin:0 0 10px">' + RTO_NOTE + '</p><label>Choose your payment period</label><div class="opt-row">' + t.map(function (x) { return '<label class="opt"><input type="radio" name="ap-term" value="' + x[0] + '"' + (String(x[0]) === keep || t.length === 1 ? ' checked' : '') + '><span><b>' + x[0] + ' months</b><small>' + rangeFor(v, x[0]) + ' per month (estimate)</small></span></label>'; }).join('') + '</div>';
   }
   function drawDocs() {
     var emp = radio('ap-emp') || 'employed', list = DOCS[emp];
@@ -694,7 +712,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
 
   /* ---------- Admin ---------- */
   var adminIn = false;
-  var A = { tab: 'leads', lq: '', lstatus: '', astatus: '' };
+  var A = { tab: 'leads', lq: '', lstatus: '', astatus: '', cloc: '' };
   function head(t, extra) { return '<div class="page-head"><h1>' + t + '</h1><div>' + (extra || '') + '</div></div>'; }
   function renderAdmin() {
     document.querySelectorAll('[data-admin]').forEach(function (b) { b.setAttribute('aria-current', (b.dataset.admin === A.tab || (A.tab === 'editor' && b.dataset.admin === 'cars')) ? 'true' : 'false'); });
@@ -774,11 +792,11 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
 
   function viewCars() {
     $('admin-body').innerHTML = head('Cars', '<button class="btn" type="button" data-new-car>+ Upload a car</button>') +
-      (CARS.length ? CARS.map(function (v) {
+      locSeg() + (carsShown().length ? carsShown().map(function (v) {
         var ph = photosOf(v)[0], st = v.status;
         return '<div class="vrow">' + (ph ? '<img class="thumb" src="' + esc(ph) + '" alt="">' : '<div class="thumb none">No photo</div>') +
-          '<div><b>' + esc(title(v)) + '</b><div class="muted small">Stock ' + esc(v.stock) + ' · ' + money(v.price) + (hasRto(v) ? ' · Rent to own' : ' · Cash only') + '</div></div>' +
-          '<div class="vmeta"><span class="status">' + (st === 'published' ? 'Showing on site' : st === 'sold' ? 'Sold' : 'Hidden') + '</span><div class="row"><button class="btn btn-small btn-outline" type="button" data-edit="' + esc(v.stock) + '">Edit</button>' +
+          '<div><b>' + esc(title(v)) + '</b><div class="muted small">Stock ' + esc(v.stock) + ' · ' + money(v.price) + (hasRto(v) ? ' · Rent to own' : ' · Cash only') + ' · <b>' + locName(v.loc) + '</b></div></div>' +
+          '<div class="vmeta"><span class="status">' + (st === 'published' ? 'Showing on site' : st === 'sold' ? 'Sold' : 'Hidden') + '</span><div class="row"><button class="btn btn-small btn-outline" type="button" data-edit="' + esc(v.stock) + '">Edit</button><button class="btn btn-small btn-outline" type="button" data-moveloc="' + esc(v.stock) + '">Move to ' + (v.loc === 'executive' ? 'Bank Repo' : 'Executive Motor World') + '</button>' +
           (st === 'published' ? '<button class="btn btn-small btn-outline" type="button" data-cstatus="hidden" data-stock="' + esc(v.stock) + '">Hide</button><button class="btn btn-small btn-outline" type="button" data-cstatus="sold" data-stock="' + esc(v.stock) + '">Mark sold</button>' : '<button class="btn btn-small" type="button" data-cstatus="published" data-stock="' + esc(v.stock) + '">Show on site</button>') + '</div></div></div>';
       }).join('') : '<div class="notice">No cars yet. Upload the first one.</div>');
   }
@@ -786,14 +804,15 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
   var ED = null;
   function nextStock() { var m = 100; CARS.forEach(function (v) { var x = /^BRC-(\d+)$/.exec(v.stock); if (x) m = Math.max(m, +x[1]); }); return 'BRC-' + (m + 1); }
   function openEditor(stock) {
-    if (stock) { var v = find(stock), r = v.rto; ED = { id: v.id, orig: v.stock, removed: [], d: { stock: v.stock, make: v.make, model: v.model, year: v.year, km: v.km == null ? '' : v.km, price: v.price, body: v.body, cond: v.cond, desc: v.desc, rto: !!r, dep: r ? r.deposit : '', m48: r && r.m48 ? r.m48 : '', m54: r && r.m54 ? r.m54 : '', depEdited: !!r && r.deposit !== depositFor(v.price) }, photos: v.photos.slice() }; }
-    else ED = { id: null, orig: null, removed: [], d: { stock: nextStock(), make: '', model: '', year: '', km: '', price: '', body: '', cond: 'not_confirmed', desc: '', rto: false, dep: '', m48: '', m54: '', depEdited: false }, photos: [] };
+    if (stock) { var v = find(stock), r = v.rto; ED = { id: v.id, orig: v.stock, removed: [], d: { loc: v.loc || 'bank_repo', stock: v.stock, make: v.make, model: v.model, year: v.year, km: v.km == null ? '' : v.km, price: v.price, body: v.body, cond: v.cond, desc: v.desc, rto: !!r, dep: r ? r.deposit : '', m48: r && r.m48 ? r.m48 : '', m54: r && r.m54 ? r.m54 : '', depEdited: !!r && r.deposit !== depositFor(v.price) }, photos: v.photos.slice() }; }
+    else ED = { id: null, orig: null, removed: [], d: { loc: 'bank_repo', stock: nextStock(), make: '', model: '', year: '', km: '', price: '', body: '', cond: 'not_confirmed', desc: '', rto: false, dep: '', m48: '', m54: '', depEdited: false }, photos: [] };
     A.tab = 'editor'; renderAdmin(); show('admin');
   }
-  function edCar() { var d = ED.d; return { stock: d.stock.trim(), make: d.make.trim(), model: d.model.trim(), year: +d.year, km: d.km === '' ? null : +d.km, price: +d.price || 0, body: d.body, cond: d.cond, desc: d.desc, photos: ED.photos.slice(), rto: d.rto ? { deposit: +d.dep || 0, m48: +d.m48 > 0 ? +d.m48 : null, m54: +d.m54 > 0 ? +d.m54 : null } : null }; }
+  function edCar() { var d = ED.d; return { loc: d.loc, stock: d.stock.trim(), make: d.make.trim(), model: d.model.trim(), year: +d.year, km: d.km === '' ? null : +d.km, price: +d.price || 0, body: d.body, cond: d.cond, desc: d.desc, photos: ED.photos.slice(), rto: d.rto ? { deposit: +d.dep || 0, m48: +d.m48 > 0 ? +d.m48 : null, m54: +d.m54 > 0 ? +d.m54 : null } : null }; }
   function checks() {
     var d = ED.d, c = [['At least 5 photos (' + ED.photos.length + ' added, up to 15)', ED.photos.length >= 5], ['Stock number', !!d.stock.trim()], ['Make and model', !!(d.make.trim() && d.model.trim())], ['Year', +d.year >= 1950 && +d.year <= 2100], ['Asking price (cash)', +d.price > 0], ['Body type', !!d.body]];
     if (d.rto) { c.push(['Rent to own deposit', +d.dep > 0]); c.push(['Rent to own monthly amount (48 or 54 months)', +d.m48 > 0 || +d.m54 > 0]); }
+    if (d.rto && +d.m48 > 0 && +d.m54 > 0) c.push(['54 months costs less per month than 48 months', +d.m54 < +d.m48]);
     return c;
   }
   function viewEditor() {
@@ -807,8 +826,9 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       fld('Year', 'd-year', '<input id="d-year" data-k="year" type="number" min="1950" max="2100" inputmode="numeric" value="' + esc(d.year) + '">') + fld('Mileage (km), leave empty if unknown', 'd-km', '<input id="d-km" data-k="km" type="number" min="0" inputmode="numeric" value="' + esc(d.km) + '">') + '</div>' +
       '<label class="small"><b>Body type</b></label><div class="seg" role="radiogroup" aria-label="Body type">' + BODY_TYPES.map(function (t) { return '<button type="button" role="radio" data-edbody="' + esc(t) + '" aria-checked="' + (d.body === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
       '<label class="small"><b>Does it run? (only pick what you know)</b></label><div class="seg" role="radiogroup" aria-label="Condition">' + Object.keys(CONDITIONS).map(function (k) { return '<button type="button" role="radio" data-edcond="' + k + '" aria-checked="' + (d.cond === k) + '">' + CONDITIONS[k].label + '</button>'; }).join('') + '</div></div>' +
+      '<div class="panel"><h3>Where is this car?</h3><div class="seg" role="radiogroup" aria-label="Location"><button type="button" role="radio" data-edloc="bank_repo" aria-checked="' + (d.loc !== 'executive') + '">At Bank Repo</button><button type="button" role="radio" data-edloc="executive" aria-checked="' + (d.loc === 'executive') + '">At Executive Motor World (Premium)</button></div><p class="muted small">Cars at Executive Motor World show a small "Premium · Executive Motor World" label on the website.</p></div>' +
       '<div class="panel"><h3>How can customers buy it?</h3><div class="seg" role="radiogroup" aria-label="Payment options"><button type="button" role="radio" data-edrto="off" aria-checked="' + (!d.rto) + '">Cash only</button><button type="button" role="radio" data-edrto="on" aria-checked="' + d.rto + '">Cash and rent to own</button></div>' +
-      '<div id="rto-fields" class="hidden-box"' + (d.rto ? '' : ' hidden') + '><p class="muted small">The deposit starts at 30% of the cash price. You can change it for this car. Fill in the monthly amount for each period you offer, and leave the other empty.</p><div class="form-grid three">' +
+      '<div id="rto-fields" class="hidden-box"' + (d.rto ? '' : ' hidden') + '><p class="muted small">The deposit starts at 30% of the cash price. You can change it for this car. Fill in the monthly amount for each period you offer, and leave the other empty. A longer period costs less per month, so the 54-month amount must be lower than the 48-month amount.</p><div class="form-grid three">' +
       fld('Deposit (R)', 'd-dep', '<input id="d-dep" data-k="dep" type="number" min="0" inputmode="numeric" value="' + esc(d.dep) + '">') + fld('Monthly, 48 months (R)', 'd-m48', '<input id="d-m48" data-k="m48" type="number" min="0" inputmode="numeric" value="' + esc(d.m48) + '">') + fld('Monthly, 54 months (R)', 'd-m54', '<input id="d-m54" data-k="m54" type="number" min="0" inputmode="numeric" value="' + esc(d.m54) + '">') + '</div></div></div>' +
       '<div class="panel"><h3>Description and problems</h3><p class="muted small">Write what the customer should know: what is wrong with the car, what has been fixed, anything missing.</p><textarea id="d-desc" data-k="desc" maxlength="2000" style="min-height:130px">' + esc(d.desc) + '</textarea></div></form>' +
       '<aside><div class="panel"><h3>Before it can show on the site</h3><ul class="check" id="checklist"></ul><div id="ed-msg"></div>' +
@@ -821,7 +841,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     var c = checks(), v = edCar();
     $('checklist').innerHTML = c.map(function (x) { return '<li><span class="tick ' + (x[1] ? 'ok' : 'no') + '">' + (x[1] ? '✓' : '✕') + '</span>' + x[0] + '</li>'; }).join('');
     $('b-pub').disabled = !c.every(function (x) { return x[1]; });
-    $('preview').innerHTML = cardHtml({ stock: v.stock || 'Stock no.', make: v.make || 'Make', model: v.model || 'Model', body: v.body || 'Body type', year: v.year || 'Year', price: v.price, cond: v.cond, km: v.km, photos: v.photos.length ? v.photos : [{ url: '' }], rto: v.rto }, true);
+    $('preview').innerHTML = cardHtml({ loc: v.loc, stock: v.stock || 'Stock no.', make: v.make || 'Make', model: v.model || 'Model', body: v.body || 'Body type', year: v.year || 'Year', price: v.price, cond: v.cond, km: v.km, photos: v.photos.length ? v.photos : [{ url: '' }], rto: v.rto }, true);
   }
   function saveEditor(mode) {
     var v = edCar(), msg = $('ed-msg');
@@ -830,12 +850,13 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
     if (CARS.some(function (x) { return x.stock.toLowerCase() === v.stock.toLowerCase() && x.stock !== ED.orig; })) return err('That stock number is already used. Every stock number must be different.');
     if (!v.make || !v.model) return err('Enter the make and model.');
     if (mode === 'publish' && !checks().every(function (x) { return x[1]; })) return err('Finish the checklist first.');
+    if (ED.d.rto && v.rto.m48 && v.rto.m54 && v.rto.m54 >= v.rto.m48) return err('A longer period costs less per month. The 54-month amount must be lower than the 48-month amount.');
     if (ED.d.rto && !(v.rto.deposit > 0 && (v.rto.m48 || v.rto.m54))) return err('Rent to own needs a deposit and at least one monthly amount, or choose Cash only.');
     if (!(v.year >= 1950 && v.year <= 2100)) return err('Enter a valid year.');
     if (!v.body) return err('Choose a body type.');
     var btns = document.querySelectorAll('[data-save]'); btns.forEach(function (b) { b.disabled = true; });
     msg.innerHTML = '<div class="notice" style="margin-top:10px">Saving… please wait.</div>';
-    var row = { stock_number: v.stock, make: v.make, model: v.model, year: v.year, mileage: v.km, price: v.price, body_type: v.body, condition: v.cond, description: v.desc, rto_enabled: !!v.rto, rto_deposit: v.rto ? v.rto.deposit : null, rto_m48: v.rto ? v.rto.m48 : null, rto_m54: v.rto ? v.rto.m54 : null };
+    var row = { location: v.loc === 'executive' ? 'executive' : 'bank_repo', stock_number: v.stock, make: v.make, model: v.model, year: v.year, mileage: v.km, price: v.price, body_type: v.body, condition: v.cond, description: v.desc, rto_enabled: !!v.rto, rto_deposit: v.rto ? v.rto.deposit : null, rto_m48: v.rto ? v.rto.m48 : null, rto_m54: v.rto ? v.rto.m54 : null };
     var chain = Promise.resolve();
     chain = chain.then(function () {
       if (ED.id) return sb.from('vehicles').update(row).eq('id', ED.id).then(function (r) { if (r.error) throw r.error; });
@@ -901,7 +922,7 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
 
   /* ---------- Events ---------- */
   document.addEventListener('click', function (e) {
-    var t = e.target.closest('[data-go],[data-open],[data-enquire],[data-apply],[data-rto-filter],[data-photo],[data-admin],[data-signout],[data-new-car],[data-edit],[data-cstatus],[data-edbody],[data-edcond],[data-edrto],[data-save],[data-pmove],[data-pdel],[data-lead],[data-app],[data-lstatus],[data-astatus],[data-setlead],[data-setapp],[data-addnote],[data-docpath],[data-close-overlay-btn],[data-close-overlay],#drop');
+    var t = e.target.closest('[data-go],[data-open],[data-enquire],[data-apply],[data-rto-filter],[data-photo],[data-admin],[data-signout],[data-new-car],[data-edit],[data-cstatus],[data-edbody],[data-edloc],[data-cloc],[data-moveloc],[data-edcond],[data-edrto],[data-save],[data-pmove],[data-pdel],[data-lead],[data-app],[data-lstatus],[data-astatus],[data-setlead],[data-setapp],[data-addnote],[data-docpath],[data-close-overlay-btn],[data-close-overlay],#drop');
     if (!t) return;
     var d = t.dataset;
     if (d.closeOverlay !== undefined && e.target !== t) return;
@@ -923,6 +944,16 @@ table.data tbody tr { cursor: pointer; } table.data tbody tr:hover td { backgrou
       sb.from('vehicles').update({ status: st }).eq('id', c.id).then(function (r) {
         if (r.error) { toast(/photo|price/i.test(r.error.message) ? 'A car needs a price and at least 5 photos before it can show on the site.' : 'Could not update: ' + r.error.message); return; }
         c.status = st; toast(c.stock + (st === 'published' ? ' is now showing on the site' : st === 'sold' ? ' marked as sold' : ' is now hidden')); renderPublic(); renderAdmin();
+      });
+      return;
+    }
+    if (d.cloc !== undefined) { A.cloc = d.cloc; renderAdmin(); return; }
+    if (d.edloc) { ED.d.loc = d.edloc; t.parentNode.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-checked', b === t); }); drawLive(); return; }
+    if (d.moveloc) {
+      var mv = find(d.moveloc), nl = mv.loc === 'executive' ? 'bank_repo' : 'executive';
+      sb.from('vehicles').update({ location: nl }).eq('id', mv.id).then(function (r) {
+        if (r.error) { toast('Could not move the car: ' + r.error.message); return; }
+        mv.loc = nl; toast(mv.stock + ' is now at ' + locName(nl)); renderPublic(); renderAdmin();
       });
       return;
     }
